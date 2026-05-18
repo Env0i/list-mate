@@ -19,9 +19,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from .routers import works, bangumi, profiles, tags  # noqa: E402
+from .routers import works, bangumi, game_profiles, tags  # noqa: E402
 
 app.include_router(works.router, prefix="/api")
 app.include_router(bangumi.router, prefix="/api")
-app.include_router(profiles.router, prefix="/api")
+app.include_router(game_profiles.router, prefix="/api")
 app.include_router(tags.router, prefix="/api")

@@ -1,5 +1,5 @@
 from .work import Work
-from .profile import Profile
+from .game_profile import GameProfile
 from .tag import Tag, WorkTag
 
-__all__ = ["Work", "Profile", "Tag", "WorkTag"]
+__all__ = ["Work", "GameProfile", "Tag", "WorkTag"]

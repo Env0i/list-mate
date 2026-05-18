@@ -4,7 +4,7 @@
 实现 list-mate 的 Iter 1（核心记录）：后端全部 API + 前端作品管理、进度记录核心流程跑通。
 
 ## Current Phase
-Phase 3
+Phase 4
 
 ## Phases
 
@@ -22,9 +22,9 @@ Phase 3
 - **Status:** complete
 
 ### Phase 3: 后端 API — Profiles + Tags
-- [ ] Profiles CRUD API（含自动完成逻辑）
-- [ ] Tags CRUD API
-- **Status:** pending
+- [x] Profiles CRUD API（含自动完成逻辑）
+- [x] Tags CRUD API
+- **Status:** complete
 
 ### Phase 4: 前端项目初始化
 - [ ] Vue 3 + Vite + Vue Router 项目搭建

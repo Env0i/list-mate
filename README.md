@@ -14,6 +14,7 @@
 
 - **后端**: Python FastAPI + SQLAlchemy + SQLite
 - **前端**: Vue 3 + Vite + Vue Router（响应式，手机+桌面）
+- **视觉**: 抽卡图鉴风格 UI，品类色系统，玻璃拟态导航，全息卡片动画
 - **部署**: 阿里云服务器，Nginx
 
 ## 迭代计划
@@ -41,5 +42,6 @@ npx vite
 
 ## 文档
 
-- [设计文档](docs/design.md)
+- [设计文档](docs/design.md) — 架构与数据模型
+- [UI 设计规范](docs/ui-design-spec.md) — 视觉风格与组件规范
 - [产品需求](docs/PRD.md)

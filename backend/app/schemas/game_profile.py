@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from typing import Optional
 
 
-class ProfileCreate(BaseModel):
-    name: str = "默认"
+class GameProfileCreate(BaseModel):
+    name: str = "本体"
     progress_value: Optional[float] = None
     status: Optional[str] = None
     rating: Optional[int] = None
@@ -12,7 +12,7 @@ class ProfileCreate(BaseModel):
     sort_order: int = 0
 
 
-class ProfileUpdate(BaseModel):
+class GameProfileUpdate(BaseModel):
     name: Optional[str] = None
     progress_value: Optional[float] = None
     status: Optional[str] = None
@@ -21,7 +21,7 @@ class ProfileUpdate(BaseModel):
     sort_order: Optional[int] = None
 
 
-class ProfileResponse(BaseModel):
+class GameProfileResponse(BaseModel):
     id: int
     work_id: int
     name: str

@@ -28,19 +28,24 @@ backend/            # FastAPI 后端
 frontend/           # Vue 3 前端（原来称 mobile/）
   src/
     api/            # API 调用封装
+    assets/icons/   # iconfont SVG 图标（品类图标、导航图标）
     components/     # 通用组件
+      layout/       # TopBar（桌面导航）、MobileNav（手机底部导航）
+      work/         # WorkCardGrid、ProgressBar、StatusBadge
     views/          # 页面组件
     router/         # 路由配置
-    App.vue         # 根组件 + 全局样式
+    style.css       # 全局 CSS 变量、品类色、动画关键帧
+    App.vue         # 根组件（TopBar + router-view + MobileNav）
 ```
 
 ## 核心设计决策
 
-- **Profile 统一模型**: 所有品类共用 Profile（取代独立的 Progress + GameProfile），支持二刷/多配置
+- **数据模型分离**: 动漫/小说/漫画的进度字段直接挂在 Work 上；GameProfile 仅用于游戏多配置（支持二刷/整合包/自打模组）
+- **两套状态枚举**: 动漫/小说/漫画用 wish/watching/completed/paused/dropped；游戏用 wish/playing/completed/dropped/wait_buy/wait_sale
 - **单前端 + 响应式**: 不做 Uni-app 原生编译，一套 Vue 3 代码适配手机和桌面
 - **封面缓存**: Bangumi 图片存为 BLOB，不依赖外部服务展示
 - **进度自动完成**: progress_value >= total (>0) 时自动标记 completed，可手动覆盖
-- **多附件**: 每个 Profile 可挂多个附件（不限定格式），取代单文件上传
+- **多附件**: 每个 GameProfile 可挂多个附件（不限定格式）
 - **开发本地 → 部署服务器**: 本地开发完成后用 deploy.py 上传到阿里云
 
 ## 迭代计划
@@ -55,9 +60,12 @@ frontend/           # Vue 3 前端（原来称 mobile/）
 ## 关键约定
 
 - **API 基础路径**: `/api` → Vite dev proxy: `http://localhost:8000`
-- **响应式断点**: `<768px` 手机（底部 Tab），`>=768px` 桌面（侧边栏）
+- **响应式断点**: `<768px` 手机（底部 Tab），`>=768px` 桌面（顶部导航栏 TopBar）
+- **视觉风格**: 抽卡图鉴/集换式卡牌 UI — 暖白卡册纸背景 (#F7F5F0)，品类色辉光，全息闪光 hover，EXP 经验值条，印章式状态戳记，发牌入场动画
+- **字体**: DM Sans + Noto Sans SC
 - **进度单位**: anime→ep, novel→chapter, comic→volume, game→percent
-- **状态枚举**: wish / watching / completed / paused / dropped
+- **状态枚举（动漫/小说/漫画）**: wish / watching / completed / paused / dropped
+- **状态枚举（游戏）**: wish / playing / completed / dropped / wait_buy / wait_sale
 - **评分**: 0-10 整数，null 表示未评分
 - **total 为空**: 表示连载中/未知总进度
 

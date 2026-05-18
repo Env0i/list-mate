@@ -5,11 +5,11 @@ from fastapi.responses import Response, RedirectResponse
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models.work import Work
-from ..models.profile import Profile
+from ..models.work import Work, WorkStatus
+from ..models.game_profile import GameProfile
 from ..models.tag import WorkTag
 from ..schemas.work import WorkCreate, WorkUpdate, WorkResponse, WorkListItem, PaginatedWorks
-from ..schemas.profile import ProfileResponse
+from ..schemas.game_profile import GameProfileResponse
 from ..schemas.tag import TagResponse
 
 router = APIRouter(tags=["works"])
@@ -29,8 +29,14 @@ def list_works(
 
     if category:
         query = query.filter(Work.category == category)
+
     if status:
-        query = query.filter(Work.profiles.any(Profile.status == status))
+        # 游戏的状态在 GameProfile 上，其他品类在 Work 上
+        if category == "game":
+            query = query.filter(Work.game_profiles.any(GameProfile.status == status))
+        else:
+            query = query.filter(Work.status == status)
+
     if tag_id:
         query = query.filter(Work.work_tags.any(WorkTag.tag_id == tag_id))
     if q:
@@ -66,15 +72,17 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
         except httpx.RequestError:
             pass
 
-    work = Work(**data.model_dump(), cover_data=cover_data)
+    work = Work(**data.model_dump(exclude_unset=True), cover_data=cover_data)
     db.add(work)
     db.flush()
 
-    profile = Profile(work_id=work.id, name="默认", sort_order=0)
-    db.add(profile)
+    # 游戏作品自动创建一个默认 GameProfile
+    if work.category == "game":
+        gp = GameProfile(work_id=work.id, name="本体", sort_order=0)
+        db.add(gp)
+
     db.commit()
     db.refresh(work)
-
     return _work_to_response(work)
 
 
@@ -102,8 +110,23 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
         except httpx.RequestError:
             pass
 
+    user_set_status = "status" in update_data
+    if user_set_status and update_data["status"] != WorkStatus.COMPLETED.value:
+        update_data["auto_completed"] = False
+
     for key, value in update_data.items():
         setattr(work, key, value)
+
+    # 自动标记完成（仅非游戏作品）
+    if not user_set_status and work.category != "game":
+        if (
+            work.total and work.total > 0
+            and work.progress_value is not None
+            and work.progress_value >= work.total
+            and not work.auto_completed
+        ):
+            work.status = WorkStatus.COMPLETED
+            work.auto_completed = True
 
     db.commit()
     db.refresh(work)
@@ -142,11 +165,16 @@ def _work_to_response(work: Work) -> WorkResponse:
         sub_category=work.sub_category,
         progress_unit=val(work.progress_unit),
         total=work.total,
+        progress_value=work.progress_value,
+        status=val(work.status) if work.status else None,
+        rating=work.rating,
+        review=work.review,
+        auto_completed=work.auto_completed,
         cover_url=work.cover_url,
         bangumi_id=work.bangumi_id,
         cover_source=val(work.cover_source),
         created_at=work.created_at,
         updated_at=work.updated_at,
-        profiles=[ProfileResponse.model_validate(p) for p in work.profiles],
+        game_profiles=[GameProfileResponse.model_validate(gp) for gp in work.game_profiles],
         tags=[TagResponse.model_validate(wt.tag) for wt in work.work_tags],
     )

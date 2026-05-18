@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional
 
-from .profile import ProfileResponse
+from .game_profile import GameProfileResponse
 from .tag import TagResponse
 
 
@@ -12,6 +12,10 @@ class WorkCreate(BaseModel):
     sub_category: str = ""
     progress_unit: str
     total: Optional[int] = None
+    progress_value: Optional[float] = None
+    status: Optional[str] = None
+    rating: Optional[int] = None
+    review: Optional[str] = None
     bangumi_id: Optional[int] = None
     cover_url: Optional[str] = None
 
@@ -22,6 +26,10 @@ class WorkUpdate(BaseModel):
     sub_category: Optional[str] = None
     progress_unit: Optional[str] = None
     total: Optional[int] = None
+    progress_value: Optional[float] = None
+    status: Optional[str] = None
+    rating: Optional[int] = None
+    review: Optional[str] = None
     bangumi_id: Optional[int] = None
     cover_url: Optional[str] = None
     cover_source: Optional[str] = None
@@ -34,6 +42,10 @@ class WorkListItem(BaseModel):
     sub_category: str
     progress_unit: str
     total: Optional[int] = None
+    progress_value: Optional[float] = None
+    status: Optional[str] = None
+    rating: Optional[int] = None
+    auto_completed: bool = False
     cover_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
@@ -44,7 +56,8 @@ class WorkListItem(BaseModel):
 class WorkResponse(WorkListItem):
     bangumi_id: Optional[int] = None
     cover_source: str = "manual"
-    profiles: list[ProfileResponse] = []
+    review: Optional[str] = None
+    game_profiles: list[GameProfileResponse] = []
     tags: list[TagResponse] = []
 
 

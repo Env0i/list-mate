@@ -1,6 +1,6 @@
 import enum
 from datetime import datetime
-from sqlalchemy import Integer, String, Enum, DateTime, func
+from sqlalchemy import Integer, String, Float, Enum, DateTime, Boolean, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ..database import Base
 
@@ -20,6 +20,14 @@ class ProgressUnit(str, enum.Enum):
     PERCENT = "percent"
 
 
+class WorkStatus(str, enum.Enum):
+    WISH = "wish"
+    WATCHING = "watching"
+    COMPLETED = "completed"
+    PAUSED = "paused"
+    DROPPED = "dropped"
+
+
 class CoverSource(str, enum.Enum):
     BANGUMI = "bangumi"
     MANUAL = "manual"
@@ -35,6 +43,14 @@ class Work(Base):
     sub_category: Mapped[str] = mapped_column(String, default="", nullable=False)
     progress_unit: Mapped[ProgressUnit] = mapped_column(Enum(ProgressUnit), nullable=False)
     total: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # 动漫/小说/漫画的直接进度字段
+    progress_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    status: Mapped[WorkStatus | None] = mapped_column(Enum(WorkStatus), nullable=True)
+    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    review: Mapped[str | None] = mapped_column(String, nullable=True)
+    auto_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
     bangumi_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     cover_url: Mapped[str | None] = mapped_column(String, nullable=True)
     cover_data: Mapped[bytes | None] = mapped_column(nullable=True)
@@ -48,5 +64,5 @@ class Work(Base):
         DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
     )
 
-    profiles = relationship("Profile", back_populates="work", cascade="all, delete-orphan")
+    game_profiles = relationship("GameProfile", back_populates="work", cascade="all, delete-orphan")
     work_tags = relationship("WorkTag", back_populates="work", cascade="all, delete-orphan")

@@ -116,9 +116,8 @@
 ## 5. 解决方案概述
 
 ### 架构
-- **后端**: Python FastAPI + SQLAlchemy + SQLite（单用户本地运行）
-- **移动端**: Uni-app 3.0 (Vue 3) → 编译为 H5 Web + iOS/Android App
-- **管理后台**: Vue 3 + Element Plus（Web 端管理）
+- **后端**: Python FastAPI + SQLAlchemy + SQLite（单用户，本地 + 服务器部署）
+- **前端**: Vue 3 + Vite（单 SPA，响应式适配手机和桌面）
 - **数据源**: Bangumi API（自动填充作品信息）
 
 ### 核心数据模型
@@ -133,16 +132,10 @@ Work（作品）
 │
 ├── Tag [M:N] — 自定义标签（名称 + 颜色）
 │
-├── Progress（通用进度记录—动漫/小说/漫画用）
-│   ├── progress_value
-│   ├── status: wish / watching / completed / paused / dropped
-│   ├── rating: 0-10
-│   └── review: 文字评价
-│
-└── GameProfile（仅游戏用—多配置）
-    ├── name: 配置名（本体/整合包/自打模组）
+└── Profile（统一进度配置 — 所有品类共用）
+    ├── name: 配置名（"默认"/"二刷"/"整合包"/"自打模组"）
     ├── progress_value / status / rating / review
-    └── mod_list_file: 可选的模组清单 txt
+    └── 附件: 模组清单、沙盒配置文件等（多文件，不限类型）
 ```
 
 ### 核心业务流程
@@ -170,7 +163,7 @@ Work（作品）
 |------|--------|------|---------|
 | Bangumi API 变更 | 低 | 高 | 封装隔离层，可切换数据源 |
 | 数据库文件损坏 | 低 | 高 | 考虑后续加备份导出 |
-| Uni-app App 端兼容 | 中 | 中 | 先用 H5 验证，再编译 App |
+| Bangumi API 搜索速率限制 | 低 | 中 | 后端缓存搜索结果，封面缓存至 BLOB |
 
 ### 开放式问题
 - [ ] 是否需要分类默认标签预设（如看番用户常打的标签）？

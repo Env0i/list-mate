@@ -1,11 +1,11 @@
 from .work import WorkCreate, WorkUpdate, WorkResponse, WorkListItem, PaginatedWorks
-from .profile import ProfileCreate, ProfileUpdate, ProfileResponse
+from .game_profile import GameProfileCreate, GameProfileUpdate, GameProfileResponse
 from .tag import TagCreate, TagUpdate, TagResponse
 from .bangumi import BangumiSearchResult, BangumiSearchResponse, BangumiSubjectResponse
 
 __all__ = [
     "WorkCreate", "WorkUpdate", "WorkResponse", "WorkListItem", "PaginatedWorks",
-    "ProfileCreate", "ProfileUpdate", "ProfileResponse",
+    "GameProfileCreate", "GameProfileUpdate", "GameProfileResponse",
     "TagCreate", "TagUpdate", "TagResponse",
     "BangumiSearchResult", "BangumiSearchResponse", "BangumiSubjectResponse",
 ]
