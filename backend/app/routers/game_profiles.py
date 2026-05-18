@@ -28,8 +28,9 @@ def create_game_profile(work_id: int, data: GameProfileCreate, db: Session = Dep
 
     db.add(gp)
     db.flush()
+    st_val = gp.status.value if hasattr(gp.status, "value") else gp.status
     record_timeline(db, work_id, "created", game_profile_id=gp.id,
-                    new_value={"name": gp.name, "status": gp.status.value})
+                    new_value={"name": gp.name, "status": st_val})
     db.commit()
     db.refresh(gp)
     return gp

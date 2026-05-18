@@ -1,6 +1,6 @@
 import httpx
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import Response, RedirectResponse
 from sqlalchemy.orm import Session
 
@@ -110,6 +110,12 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
 
     create_data = data.model_dump()
     tag_ids = create_data.pop("tag_ids", [])
+    is_game = create_data.get("category") == "game"
+
+    # 游戏作品的状态只存在 GameProfile 上，不在 Work 表上
+    if is_game:
+        game_status = create_data.pop("status", None)
+
     create_data = {k: v for k, v in create_data.items() if v is not None}
 
     # Auto-fetch Bangumi subject data
@@ -123,8 +129,10 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
     db.flush()
 
     # 游戏作品自动创建一个默认 GameProfile
-    if work.category == "game":
+    if is_game:
         gp = GameProfile(work_id=work.id, name="本体", sort_order=0)
+        if game_status:
+            gp.status = game_status
         db.add(gp)
 
     # Tag associations
@@ -133,7 +141,8 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
         if tag:
             db.add(WorkTag(work_id=work.id, tag_id=tid))
 
-    record_timeline(db, work.id, "created", new_value={"title": work.title, "category": work.category.value})
+    cat_val = work.category.value if hasattr(work.category, "value") else work.category
+    record_timeline(db, work.id, "created", new_value={"title": work.title, "category": cat_val})
 
     db.commit()
     db.refresh(work)
@@ -155,6 +164,10 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="作品不存在")
 
     update_data = data.model_dump(exclude_unset=True)
+
+    # 游戏作品的状态只存在 GameProfile 上
+    if work.category == "game" and "status" in update_data:
+        del update_data["status"]
 
     if "cover_url" in update_data and update_data["cover_url"] != work.cover_url:
         try:
@@ -220,6 +233,17 @@ def delete_work(work_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="作品不存在")
     db.delete(work)
     db.commit()
+
+
+@router.post("/works/{work_id}/cover", status_code=200)
+def upload_work_cover(work_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    work = db.query(Work).get(work_id)
+    if not work:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    work.cover_data = file.file.read()
+    work.cover_source = "manual"
+    db.commit()
+    return {"message": "封面上传成功"}
 
 
 @router.get("/works/{work_id}/cover")

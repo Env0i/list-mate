@@ -1,0 +1,546 @@
+{
+  "pass": 60,
+  "fail": 0,
+  "tests": [
+    {
+      "name": "List tags",
+      "method": "GET",
+      "path": "/tags",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create tag #1",
+      "method": "POST",
+      "path": "/tags",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create tag #2",
+      "method": "POST",
+      "path": "/tags",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create duplicate tag",
+      "method": "POST",
+      "path": "/tags",
+      "status_code": 409,
+      "expected": 409,
+      "status": "PASS",
+      "detail": "标签已存在"
+    },
+    {
+      "name": "List tags",
+      "method": "GET",
+      "path": "/tags",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Update tag",
+      "method": "PUT",
+      "path": "/tags/16",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "List tags after update",
+      "method": "GET",
+      "path": "/tags",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "List works",
+      "method": "GET",
+      "path": "/works",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create work (anime)",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create work (novel)",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create work (comic)",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create work (game)",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Get work detail",
+      "method": "GET",
+      "path": "/works/25",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Update work",
+      "method": "PUT",
+      "path": "/works/25",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Verify update",
+      "method": "GET",
+      "path": "/works/25",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Upload cover",
+      "method": "POST",
+      "path": "/works/25/cover",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Get cover",
+      "method": "GET",
+      "path": "/works/25/cover",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Get cover 404",
+      "method": "GET",
+      "path": "/works/99999/cover",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "作品不存在"
+    },
+    {
+      "name": "Upload cover 404",
+      "method": "POST",
+      "path": "/works/99999/cover",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "作品不存在"
+    },
+    {
+      "name": "Get work 404",
+      "method": "GET",
+      "path": "/works/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "作品不存在"
+    },
+    {
+      "name": "Update work 404",
+      "method": "PUT",
+      "path": "/works/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "作品不存在"
+    },
+    {
+      "name": "List all works",
+      "method": "GET",
+      "path": "/works",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Filter by category",
+      "method": "GET",
+      "path": "/works",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Filter by status",
+      "method": "GET",
+      "path": "/works",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Search by title",
+      "method": "GET",
+      "path": "/works",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Pagination",
+      "method": "GET",
+      "path": "/works",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create GameProfile",
+      "method": "POST",
+      "path": "/works/28/game-profiles",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Get GameProfile",
+      "method": "GET",
+      "path": "/game-profiles/14",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Update GameProfile",
+      "method": "PUT",
+      "path": "/game-profiles/14",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "GP on non-game work",
+      "method": "POST",
+      "path": "/works/25/game-profiles",
+      "status_code": 400,
+      "expected": 400,
+      "status": "PASS",
+      "detail": "只有游戏作品支持 GameProfile"
+    },
+    {
+      "name": "GP on 404 work",
+      "method": "POST",
+      "path": "/works/99999/game-profiles",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "作品不存在"
+    },
+    {
+      "name": "Get GP 404",
+      "method": "GET",
+      "path": "/game-profiles/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "GameProfile 不存在"
+    },
+    {
+      "name": "Update GP 404",
+      "method": "PUT",
+      "path": "/game-profiles/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "GameProfile 不存在"
+    },
+    {
+      "name": "Delete GP 404",
+      "method": "DELETE",
+      "path": "/game-profiles/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "GameProfile 不存在"
+    },
+    {
+      "name": "Search Bangumi",
+      "method": "GET",
+      "path": "/bangumi/search",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Get stats",
+      "method": "GET",
+      "path": "/stats",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "List timeline",
+      "method": "GET",
+      "path": "/timeline",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Timeline pagination",
+      "method": "GET",
+      "path": "/timeline",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Timeline by work",
+      "method": "GET",
+      "path": "/timeline",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "List attachments",
+      "method": "GET",
+      "path": "/game-profiles/14/attachments",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Upload attachment",
+      "method": "POST",
+      "path": "/game-profiles/14/attachments",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Upload attachment #2",
+      "method": "POST",
+      "path": "/game-profiles/14/attachments",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "List attachments",
+      "method": "GET",
+      "path": "/game-profiles/14/attachments",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Download attachment",
+      "method": "GET",
+      "path": "/attachments/7",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "List attachments 404",
+      "method": "GET",
+      "path": "/game-profiles/99999/attachments",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "GameProfile 不存在"
+    },
+    {
+      "name": "Upload attachment 404",
+      "method": "POST",
+      "path": "/game-profiles/99999/attachments",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "GameProfile 不存在"
+    },
+    {
+      "name": "Download attachment 404",
+      "method": "GET",
+      "path": "/attachments/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "附件不存在"
+    },
+    {
+      "name": "Delete attachment 404",
+      "method": "DELETE",
+      "path": "/attachments/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "附件不存在"
+    },
+    {
+      "name": "Export JSON",
+      "method": "GET",
+      "path": "/export/json",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Export CSV",
+      "method": "GET",
+      "path": "/export/csv",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete attachment #7",
+      "method": "DELETE",
+      "path": "/attachments/7",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete attachment #8",
+      "method": "DELETE",
+      "path": "/attachments/8",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete tag #16",
+      "method": "DELETE",
+      "path": "/tags/16",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete tag #17",
+      "method": "DELETE",
+      "path": "/tags/17",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete work #25",
+      "method": "DELETE",
+      "path": "/works/25",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete work #26",
+      "method": "DELETE",
+      "path": "/works/26",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete work #27",
+      "method": "DELETE",
+      "path": "/works/27",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete work #28",
+      "method": "DELETE",
+      "path": "/works/28",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete work 404",
+      "method": "DELETE",
+      "path": "/works/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "作品不存在"
+    },
+    {
+      "name": "Delete tag 404",
+      "method": "DELETE",
+      "path": "/tags/99999",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "标签不存在"
+    }
+  ]
+}
