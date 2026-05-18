@@ -14,6 +14,12 @@ class GameStatus(str, enum.Enum):
     WAIT_SALE = "wait_sale"
 
 
+class ProgressType(str, enum.Enum):
+    NONE = "none"
+    COUNT = "count"
+    PERCENT = "percent"
+
+
 class GameProfile(Base):
     __tablename__ = "game_profiles"
 
@@ -21,11 +27,20 @@ class GameProfile(Base):
     work_id: Mapped[int] = mapped_column(Integer, ForeignKey("works.id"), nullable=False)
     name: Mapped[str] = mapped_column(String, default="本体", nullable=False)
     progress_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    progress_type: Mapped[ProgressType] = mapped_column(
+        Enum(ProgressType), default=ProgressType.NONE, nullable=False
+    )
     status: Mapped[GameStatus] = mapped_column(
         Enum(GameStatus), default=GameStatus.WISH, nullable=False
     )
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     review: Mapped[str | None] = mapped_column(String, nullable=True)
+    start_date: Mapped[str | None] = mapped_column(String, nullable=True)
+    finish_date: Mapped[str | None] = mapped_column(String, nullable=True)
+    playtime_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source: Mapped[str | None] = mapped_column(String, nullable=True)
+    mods_list: Mapped[str | None] = mapped_column(String, nullable=True)
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
     auto_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(

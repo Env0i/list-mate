@@ -60,6 +60,35 @@ def list_works(
     )
 
 
+BANGUMI_HEADERS = {
+    "User-Agent": "list-mate/1.0 (personal project)",
+}
+
+
+def _fetch_bangumi_subject(bangumi_id: int) -> str | None:
+    """Fetch Bangumi subject detail and return JSON string of relevant metadata."""
+    import json
+    try:
+        resp = httpx.get(
+            f"https://api.bgm.tv/v0/subjects/{bangumi_id}",
+            headers=BANGUMI_HEADERS,
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return json.dumps({
+            "date": data.get("date"),
+            "platform": data.get("platform"),
+            "total_episodes": data.get("total_episodes"),
+            "volumes": data.get("volumes"),
+            "score": data.get("rating", {}).get("score"),
+            "infobox": data.get("infobox", []),
+            "tags": [t["name"] for t in data.get("tags", [])[:20]],
+        }, ensure_ascii=False)
+    except httpx.RequestError:
+        return None
+
+
 @router.post("/works", response_model=WorkResponse, status_code=201)
 def create_work(data: WorkCreate, db: Session = Depends(get_db)):
     cover_data = None
@@ -72,7 +101,15 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
         except httpx.RequestError:
             pass
 
-    work = Work(**data.model_dump(exclude_unset=True), cover_data=cover_data)
+    create_data = data.model_dump(exclude_unset=True)
+
+    # Auto-fetch Bangumi subject data
+    if data.bangumi_id and not getattr(data, 'bangumi_data', None):
+        bd = _fetch_bangumi_subject(data.bangumi_id)
+        if bd:
+            create_data["bangumi_data"] = bd
+
+    work = Work(**create_data, cover_data=cover_data)
     db.add(work)
     db.flush()
 
@@ -173,6 +210,18 @@ def _work_to_response(work: Work) -> WorkResponse:
         cover_url=work.cover_url,
         bangumi_id=work.bangumi_id,
         cover_source=val(work.cover_source),
+        summary=work.summary,
+        start_date=work.start_date,
+        finish_date=work.finish_date,
+        platform=work.platform,
+        purchase_platform=work.purchase_platform,
+        purchase_date=work.purchase_date,
+        purchase_price=work.purchase_price,
+        playtime_hours=work.playtime_hours,
+        replay_count=work.replay_count,
+        priority=work.priority,
+        external_links=work.external_links,
+        bangumi_data=work.bangumi_data,
         created_at=work.created_at,
         updated_at=work.updated_at,
         game_profiles=[GameProfileResponse.model_validate(gp) for gp in work.game_profiles],

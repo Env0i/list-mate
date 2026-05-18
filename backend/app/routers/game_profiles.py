@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models.work import Work
-from ..models.game_profile import GameProfile, GameStatus
+from ..models.game_profile import GameProfile, GameStatus, ProgressType
 from ..schemas.game_profile import GameProfileCreate, GameProfileUpdate, GameProfileResponse
 
 router = APIRouter(tags=["game-profiles"])
@@ -20,6 +20,10 @@ def create_game_profile(work_id: int, data: GameProfileCreate, db: Session = Dep
     gp = GameProfile(work_id=work_id, **data.model_dump(exclude_unset=True))
     if gp.status is None:
         gp.status = GameStatus.WISH
+
+    # Smart default for progress_type based on config name
+    if "progress_type" not in data.model_dump(exclude_unset=True):
+        gp.progress_type = _guess_progress_type(gp.name)
 
     db.add(gp)
     db.commit()
@@ -50,13 +54,11 @@ def update_game_profile(profile_id: int, data: GameProfileUpdate, db: Session = 
     for key, value in update_data.items():
         setattr(gp, key, value)
 
-    # 自动完成
-    if not user_set_status:
-        work = db.query(Work).get(gp.work_id)
+    # 自动完成（仅 percent 类型，>=100 时标记完成）
+    if not user_set_status and gp.progress_type == ProgressType.PERCENT:
         if (
-            work and work.total and work.total > 0
-            and gp.progress_value is not None
-            and gp.progress_value >= work.total
+            gp.progress_value is not None
+            and gp.progress_value >= 100
             and not gp.auto_completed
         ):
             gp.status = GameStatus.COMPLETED
@@ -65,6 +67,14 @@ def update_game_profile(profile_id: int, data: GameProfileUpdate, db: Session = 
     db.commit()
     db.refresh(gp)
     return gp
+
+
+def _guess_progress_type(name: str) -> ProgressType:
+    if any(kw in name for kw in ["二刷", "周目", "二周目"]):
+        return ProgressType.COUNT
+    if any(kw in name for kw in ["整合包", "模组", "整合"]):
+        return ProgressType.PERCENT
+    return ProgressType.NONE
 
 
 @router.delete("/game-profiles/{profile_id}", status_code=204)

@@ -1,26 +1,26 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { worksApi } from '../api/client'
 import WorkCardGrid from '../components/work/WorkCardGrid.vue'
 
-const viewMode = ref('grid')
+const router = useRouter()
 const activeCat = ref('all')
 const activeSt = ref('all')
 const q = ref('')
+const works = ref([])
+const loading = ref(true)
 
-const mockWorks = [
-  { id: 1, title: '葬送的芙莉莲', category: 'anime', total: 28, progress_value: 22, status: 'watching', game_profiles: [] },
-  { id: 2, title: '我独自升级 S2', category: 'anime', total: 13, progress_value: 13, status: 'completed', game_profiles: [] },
-  { id: 3, title: '怪兽8号', category: 'anime', total: 12, progress_value: 8, status: 'watching', game_profiles: [] },
-  { id: 4, title: '鬼灭之刃 无限城篇', category: 'anime', total: null, progress_value: 0, status: 'wish', game_profiles: [] },
-  { id: 5, title: '神秘复苏', category: 'novel', total: null, progress_value: 734, status: 'watching', game_profiles: [] },
-  { id: 6, title: '牧神记', category: 'novel', total: 1523, progress_value: 1523, status: 'completed', game_profiles: [] },
-  { id: 7, title: '诡秘之主', category: 'novel', total: 1431, progress_value: 892, status: 'watching', game_profiles: [] },
-  { id: 8, title: '一人之下', category: 'comic', total: 680, progress_value: 340, status: 'watching', game_profiles: [] },
-  { id: 9, title: '进击的巨人 漫画', category: 'comic', total: 139, progress_value: 139, status: 'completed', game_profiles: [] },
-  { id: 10, title: '艾尔登法环', category: 'game', total: null, progress_value: null, status: null, game_profiles: [{ status: 'playing' }] },
-  { id: 11, title: '赛博朋克 2077', category: 'game', total: null, progress_value: null, status: null, game_profiles: [{ status: 'wish' }] },
-  { id: 12, title: '博德之门 3', category: 'game', total: null, progress_value: null, status: null, game_profiles: [{ status: 'dropped' }] },
-]
+onMounted(async () => {
+  try {
+    const { data } = await worksApi.list({ page_size: 100 })
+    works.value = data.items
+  } catch (e) {
+    console.error('Failed to load works', e)
+  } finally {
+    loading.value = false
+  }
+})
 
 const catColorMap = {
   anime: 'var(--c-anime)',
@@ -73,7 +73,7 @@ const workStatus = (w) => {
 }
 
 const filtered = computed(() =>
-  mockWorks.filter(w => {
+  works.value.filter(w => {
     if (activeCat.value !== 'all' && w.category !== activeCat.value) return false
     if (activeSt.value !== 'all' && workStatus(w) !== activeSt.value) return false
     if (q.value && !w.title.includes(q.value)) return false
@@ -103,14 +103,6 @@ function catStyle(c) {
             </svg>
             <input v-model="q" type="text" class="s-inp" placeholder="搜索..."/>
           </div>
-          <button class="toggle-btn" @click="viewMode = viewMode === 'grid' ? 'list' : 'grid'" :title="viewMode === 'grid' ? '列表' : '网格'">
-            <svg v-if="viewMode === 'grid'" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-              <path fill-rule="evenodd" d="M4.25 2A2.25 2.25 0 002 4.25v2.5A2.25 2.25 0 004.25 9h2.5A2.25 2.25 0 009 6.75v-2.5A2.25 2.25 0 006.75 2h-2.5zm0 9A2.25 2.25 0 002 13.25v2.5A2.25 2.25 0 004.25 18h2.5A2.25 2.25 0 009 15.75v-2.5A2.25 2.25 0 006.75 11h-2.5zm9-9A2.25 2.25 0 0011 4.25v2.5A2.25 2.25 0 0013.25 9h2.5A2.25 2.25 0 0018 6.75v-2.5A2.25 2.25 0 0015.75 2h-2.5zm0 9A2.25 2.25 0 0011 13.25v2.5A2.25 2.25 0 0013.25 18h2.5A2.25 2.25 0 0018 15.75v-2.5A2.25 2.25 0 0015.75 11h-2.5z" clip-rule="evenodd"/>
-            </svg>
-            <svg v-else viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-              <path fill-rule="evenodd" d="M2 3.75A.75.75 0 012.75 3h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 3.75zm0 4.167a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75zm0 4.166a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75zm0 4.167a.75.75 0 01.75-.75h14.5a.75.75 0 010 1.5H2.75a.75.75 0 01-.75-.75z" clip-rule="evenodd"/>
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -137,8 +129,9 @@ function catStyle(c) {
       </div>
 
       <!-- Grid -->
-      <div v-if="filtered.length" class="grid" :class="{ list: viewMode === 'list' }">
-        <div v-for="(w, i) in filtered" :key="w.id" :style="{ animationDelay: (i % 12) * 0.04 + 's' }">
+      <div v-if="loading" class="loading">加载中...</div>
+      <div v-else-if="filtered.length" class="grid">
+        <div v-for="(w, i) in filtered" :key="w.id" :style="{ animationDelay: (i % 12) * 0.04 + 's' }" @click="router.push(`/works/${w.id}`)">
           <WorkCardGrid :work="w" />
         </div>
       </div>
@@ -208,18 +201,6 @@ function catStyle(c) {
 }
 .s-inp::placeholder { color: var(--text-tertiary); }
 
-.toggle-btn {
-  display: flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px;
-  border-radius: var(--radius-md);
-  color: var(--text-tertiary);
-  background: var(--bg-surface);
-  border: 1px solid var(--color-border);
-  transition: all 0.15s;
-  flex-shrink: 0;
-}
-.toggle-btn:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
-
 /* ======== Category Tabs — segmented game selector ======== */
 .cat-tabs {
   display: flex;
@@ -285,13 +266,15 @@ function catStyle(c) {
   color: var(--text-primary);
 }
 
+/* ======== Loading ======== */
+.loading { text-align: center; padding: 80px 20px; color: var(--text-tertiary); }
+
 /* ======== Grid ======== */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
 }
-.grid.list { grid-template-columns: 1fr; }
 @media (min-width: 640px) { .grid { grid-template-columns: repeat(3, 1fr); gap: 18px; } }
 @media (min-width: 960px) { .grid { grid-template-columns: repeat(4, 1fr); } }
 @media (min-width: 1200px) { .grid { grid-template-columns: repeat(5, 1fr); } }

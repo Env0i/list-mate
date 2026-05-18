@@ -57,6 +57,18 @@ class Work(Base):
     cover_source: Mapped[CoverSource] = mapped_column(
         Enum(CoverSource), default=CoverSource.MANUAL, nullable=False
     )
+    summary: Mapped[str | None] = mapped_column(String, nullable=True)
+    start_date: Mapped[str | None] = mapped_column(String, nullable=True)
+    finish_date: Mapped[str | None] = mapped_column(String, nullable=True)
+    platform: Mapped[str | None] = mapped_column(String, nullable=True)
+    purchase_platform: Mapped[str | None] = mapped_column(String, nullable=True)
+    purchase_date: Mapped[str | None] = mapped_column(String, nullable=True)
+    purchase_price: Mapped[float | None] = mapped_column(Float, nullable=True)
+    playtime_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
+    replay_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    priority: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    external_links: Mapped[str | None] = mapped_column(String, nullable=True)
+    bangumi_data: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )

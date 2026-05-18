@@ -1,0 +1,1064 @@
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { worksApi } from '../api/client'
+import CategoryBadge from '../components/work/CategoryBadge.vue'
+import ProgressBar from '../components/work/ProgressBar.vue'
+
+const route = useRoute()
+const router = useRouter()
+const work = ref(null)
+const loading = ref(true)
+const deleting = ref(false)
+const saving = ref(false)
+const showEditModal = ref(false)
+const form = ref({})
+
+const statusLabels = {
+  anime: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
+  novel: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
+  comic: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
+  game: { wish: '想玩', playing: '在玩', completed: '通关', dropped: '弃坑', wait_buy: '等购买', wait_sale: '等折扣' },
+}
+const statusBg = {
+  wish: '#A39F98', watching: '#3366FF', playing: '#3366FF',
+  completed: '#00B85A', paused: '#FFB800',
+  dropped: '#FF4444', wait_buy: '#FFB800', wait_sale: '#FF8C00',
+}
+
+const progressUnitMap = { anime: '集', novel: '章', comic: '卷' }
+
+const catColor = computed(() => `var(--c-${work.value?.category || 'anime'})`)
+
+const bangumiInfo = computed(() => {
+  if (!work.value?.bangumi_data) return null
+  try { return JSON.parse(work.value.bangumi_data) } catch { return null }
+})
+
+const infoboxMap = computed(() => {
+  if (!bangumiInfo.value?.infobox) return {}
+  const m = {}
+  for (const item of bangumiInfo.value.infobox) {
+    const v = item.value
+    m[item.key] = Array.isArray(v) ? v.map(x => x.v || x).join('、') : v
+  }
+  return m
+})
+
+const stLabel = computed(() => {
+  if (!work.value) return ''
+  const cat = work.value.category
+  if (cat === 'game') {
+    const st = work.value.game_profiles?.[0]?.status || 'wish'
+    return statusLabels[cat]?.[st] || st
+  }
+  return statusLabels[cat]?.[work.value.status] || work.value.status || '—'
+})
+
+const stBg = computed(() => {
+  if (!work.value) return '#A39F98'
+  const cat = work.value.category
+  const key = cat === 'game'
+    ? work.value.game_profiles?.[0]?.status || 'wish'
+    : work.value.status || 'wish'
+  return statusBg[key] || '#A39F98'
+})
+
+function gpProgressLabel(gp) {
+  if (gp.progress_value == null) return '—'
+  const pt = gp.progress_type || 'none'
+  if (pt === 'percent') return `${Math.round(gp.progress_value)}%`
+  if (pt === 'count') return `${gp.progress_value} 次`
+  return '—'
+}
+
+function gpProgressPct(gp) {
+  if (gp.progress_value == null) return 0
+  const pt = gp.progress_type || 'none'
+  if (pt === 'percent') return Math.min(100, Math.round(gp.progress_value))
+  return 0
+}
+
+async function load() {
+  loading.value = true
+  try {
+    const { data } = await worksApi.get(route.params.id)
+    work.value = data
+  } catch (e) {
+    console.error('Failed to load work', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function del() {
+  if (!confirm('确定删除这个作品？所有关联数据将一并删除。')) return
+  deleting.value = true
+  try {
+    await worksApi.delete(route.params.id)
+    router.push('/')
+  } catch (e) {
+    console.error('Failed to delete', e)
+    deleting.value = false
+  }
+}
+
+function openEdit() {
+  form.value = { ...work.value }
+  showEditModal.value = true
+}
+
+function closeEdit() {
+  showEditModal.value = false
+}
+
+async function saveEdit() {
+  saving.value = true
+  try {
+    await worksApi.update(route.params.id, form.value)
+    work.value = { ...work.value, ...form.value }
+    showEditModal.value = false
+  } catch (e) {
+    console.error('Failed to save', e)
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(load)
+</script>
+
+<template>
+  <div class="page">
+    <!-- Loading -->
+    <div class="page-inner" v-if="loading">
+      <div class="loading">加载中...</div>
+    </div>
+
+    <!-- Error -->
+    <div class="page-inner" v-else-if="!work">
+      <div class="empty">
+        <p>作品不存在</p>
+        <button class="back-btn" @click="router.push('/')">返回列表</button>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="page-inner" v-else>
+      <!-- Header -->
+      <div class="top-bar">
+        <button class="back-btn" @click="router.push('/')">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+            <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/>
+          </svg>
+          返回
+        </button>
+        <div class="top-actions">
+          <button class="act-btn edit" @click="openEdit">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 7.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z"/>
+            </svg>
+            编辑
+          </button>
+          <button class="act-btn del" @click="del" :disabled="deleting">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c-.84 0-1.673.025-2.5.075V3.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25v.325C11.673 4.025 10.84 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd"/>
+            </svg>
+            删除
+          </button>
+        </div>
+      </div>
+
+      <!-- Hero: cover + info card -->
+      <div class="hero">
+        <!-- Cover card -->
+        <div class="cover-w">
+          <div class="cover-card" :style="{ '--cat-color': catColor }">
+            <div
+              class="cover-img"
+              :style="{
+                background: work.cover_url
+                  ? `url(${worksApi.coverUrl(work.id)}) center/cover no-repeat`
+                  : catColor
+              }"
+            >
+              <div v-if="!work.cover_url" class="cover-placeholder">
+                <svg viewBox="0 0 40 40" fill="none" width="32" height="32">
+                  <circle cx="20" cy="20" r="18" stroke="white" stroke-width="1" opacity="0.3"/>
+                  <path d="M20 8v24M8 20h24" stroke="white" stroke-width="1.5" opacity="0.2"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info card -->
+        <div class="info-col">
+          <div class="info-card" :style="{ '--cat-color': catColor }">
+            <div class="info-hd">
+              <h1 class="title">{{ work.title }}</h1>
+              <CategoryBadge :category="work.category" />
+            </div>
+            <div class="meta">
+              <span v-if="work.sub_category">{{ work.sub_category }}</span>
+              <span v-if="work.sub_category && work.total" class="sep">·</span>
+              <span v-if="work.total">{{ work.total }} {{ progressUnitMap[work.category] || '' }}</span>
+            </div>
+
+            <div class="stamp-row">
+              <span class="status-stamp" :style="{ '--st-bg': stBg }">{{ stLabel }}</span>
+            </div>
+
+            <!-- Bangumi info -->
+            <template v-if="bangumiInfo">
+              <div class="section-label">作品情報</div>
+              <div class="info-rows">
+                <div class="ir" v-if="bangumiInfo.date">
+                  <span class="ir-l">发行日期</span>
+                  <span class="ir-v">{{ bangumiInfo.date }}</span>
+                </div>
+                <div class="ir" v-if="bangumiInfo.platform">
+                  <span class="ir-l">平台</span>
+                  <span class="ir-v">{{ bangumiInfo.platform }}</span>
+                </div>
+                <div class="ir" v-if="bangumiInfo.score && bangumiInfo.score > 0">
+                  <span class="ir-l">Bangumi 评分</span>
+                  <span class="ir-v">★ {{ bangumiInfo.score }}</span>
+                </div>
+                <div class="ir" v-if="infoboxMap['游戏类型'] || infoboxMap['类型']">
+                  <span class="ir-l">类型</span>
+                  <span class="ir-v">{{ infoboxMap['游戏类型'] || infoboxMap['类型'] }}</span>
+                </div>
+                <div class="ir" v-if="infoboxMap['开发商']">
+                  <span class="ir-l">开发商</span>
+                  <span class="ir-v">{{ infoboxMap['开发商'] }}</span>
+                </div>
+                <div class="ir" v-if="infoboxMap['发行商'] || infoboxMap['出版社']">
+                  <span class="ir-l">发行商</span>
+                  <span class="ir-v">{{ infoboxMap['发行商'] || infoboxMap['出版社'] }}</span>
+                </div>
+                <div class="ir" v-if="infoboxMap['作者']">
+                  <span class="ir-l">作者</span>
+                  <span class="ir-v">{{ infoboxMap['作者'] }}</span>
+                </div>
+                <div class="ir" v-if="infoboxMap['导演']">
+                  <span class="ir-l">导演</span>
+                  <span class="ir-v">{{ infoboxMap['导演'] }}</span>
+                </div>
+                <div class="ir" v-if="infoboxMap['脚本'] || infoboxMap['剧本']">
+                  <span class="ir-l">剧本</span>
+                  <span class="ir-v">{{ infoboxMap['脚本'] || infoboxMap['剧本'] }}</span>
+                </div>
+                <div class="ir" v-if="infoboxMap['音乐']">
+                  <span class="ir-l">音乐</span>
+                  <span class="ir-v">{{ infoboxMap['音乐'] }}</span>
+                </div>
+                <div class="ir ir-tags" v-if="bangumiInfo.tags?.length">
+                  <span class="ir-l">标签</span>
+                  <span class="ir-v">
+                    <span v-for="t in bangumiInfo.tags.slice(0, 8)" :key="t" class="b-tag">{{ t }}</span>
+                  </span>
+                </div>
+              </div>
+            </template>
+
+            <!-- Summary -->
+            <p v-if="work.summary" class="summary">{{ work.summary }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tracking card -->
+      <div class="tracking-card" :style="{ '--cat-color': catColor }">
+        <div class="tracking-header">
+          <h2 class="tracking-title">个人追踪</h2>
+        </div>
+
+        <div class="tracking-grid">
+          <div class="tk-item" v-if="work.start_date">
+            <span class="tk-l">开始时间</span>
+            <span class="tk-v">{{ work.start_date }}</span>
+          </div>
+          <div class="tk-item" v-if="work.finish_date">
+            <span class="tk-l">完成时间</span>
+            <span class="tk-v">{{ work.finish_date }}</span>
+          </div>
+          <div class="tk-item" v-if="work.platform">
+            <span class="tk-l">平台</span>
+            <span class="tk-v">{{ work.platform }}</span>
+          </div>
+          <div class="tk-item" v-if="work.priority != null">
+            <span class="tk-l">优先度</span>
+            <span class="tk-v">⭐ {{ work.priority }}</span>
+          </div>
+          <template v-if="work.category === 'game'">
+            <div class="tk-item" v-if="work.purchase_platform">
+              <span class="tk-l">购买平台</span>
+              <span class="tk-v">{{ work.purchase_platform }}</span>
+            </div>
+            <div class="tk-item" v-if="work.purchase_date">
+              <span class="tk-l">购买时间</span>
+              <span class="tk-v">{{ work.purchase_date }}</span>
+            </div>
+            <div class="tk-item" v-if="work.purchase_price != null">
+              <span class="tk-l">购买价格</span>
+              <span class="tk-v">{{ work.purchase_price }} 元</span>
+            </div>
+            <div class="tk-item" v-if="work.playtime_hours != null">
+              <span class="tk-l">游戏时长</span>
+              <span class="tk-v">{{ work.playtime_hours }} 小时</span>
+            </div>
+            <div class="tk-item" v-if="work.replay_count != null">
+              <span class="tk-l">重刷次数</span>
+              <span class="tk-v">{{ work.replay_count }} 次</span>
+            </div>
+          </template>
+          <div class="tk-item tk-full" v-if="work.external_links">
+            <span class="tk-l">外部链接</span>
+            <span class="tk-v">{{ work.external_links }}</span>
+          </div>
+        </div>
+
+        <!-- Progress + Rating + Review (non-game) -->
+        <template v-if="work.category !== 'game'">
+          <div class="tk-divider"></div>
+          <div class="tk-section">
+            <div class="section-label-sm">进度</div>
+            <ProgressBar :current="work.progress_value" :total="work.total" :category="work.category" />
+          </div>
+          <div class="tk-section" v-if="work.rating != null">
+            <div class="section-label-sm">评分</div>
+            <div class="rating-display">{{ work.rating }}/10</div>
+          </div>
+          <div class="tk-section" v-if="work.review">
+            <div class="section-label-sm">评价</div>
+            <p class="review-text">{{ work.review }}</p>
+          </div>
+        </template>
+      </div>
+
+      <!-- Game profiles section -->
+      <div v-if="work.category === 'game'" class="gp-section">
+        <div class="gp-hd">
+          <h2 class="gp-title">游戏配置</h2>
+          <button class="add-gp-btn" @click="router.push(`/works/${work.id}/game-profiles/new`)">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+              <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
+            </svg>
+            新增配置
+          </button>
+        </div>
+
+        <div v-if="work.game_profiles?.length" class="gp-bars">
+          <div
+            v-for="gp in work.game_profiles"
+            :key="gp.id"
+            class="gp-bar"
+            :style="{ '--gp-accent': statusBg[gp.status] || '#A39F98' }"
+            @click="router.push(`/works/${work.id}/game-profiles/${gp.id}`)"
+          >
+            <span class="gp-name">{{ gp.name }}</span>
+            <span class="gp-st" :style="{ background: statusBg[gp.status] || '#A39F98' }">
+              {{ statusLabels.game?.[gp.status] || gp.status }}
+            </span>
+            <div class="gp-prog">
+              <template v-if="(gp.progress_type || 'none') !== 'none' && gp.progress_value != null">
+                <div class="gp-exp-rail">
+                  <div
+                    class="gp-exp-fill"
+                    :style="{
+                      width: gpProgressPct(gp) + '%',
+                      background: 'var(--c-game)'
+                    }"
+                  >
+                    <div class="gp-exp-shine" />
+                  </div>
+                </div>
+                <span class="gp-prog-lbl">{{ gpProgressLabel(gp) }}</span>
+              </template>
+              <span v-else class="gp-prog-none">—</span>
+            </div>
+            <span class="gp-rating" v-if="gp.rating != null">{{ gp.rating }}/10</span>
+          </div>
+        </div>
+        <div v-else class="gp-empty">暂无游戏配置</div>
+      </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showEditModal" class="modal-overlay" @click.self="closeEdit">
+          <div class="modal-card" @click.stop>
+            <div class="modal-hd">
+              <h2>编辑作品</h2>
+              <button class="modal-close" @click="closeEdit">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="modal-body">
+              <!-- Section 1: 基本信息 -->
+              <div class="modal-section">
+                <h3 class="modal-section-title">基本信息</h3>
+                <div class="modal-fields">
+                  <label class="mf-label">
+                    <span>标题</span>
+                    <input v-model="form.title" placeholder="作品名称" />
+                  </label>
+                  <div class="mf-row">
+                    <label class="mf-label mf-sm">
+                      <span>子分类</span>
+                      <input v-model="form.sub_category" placeholder="如：单机、欧美剧" />
+                    </label>
+                    <label class="mf-label mf-xs" v-if="work.category !== 'game'">
+                      <span>总量</span>
+                      <input v-model.number="form.total" type="number" min="0" placeholder="0" />
+                    </label>
+                  </div>
+                  <div class="mf-row">
+                    <label class="mf-label mf-sm">
+                      <span>状态</span>
+                      <select v-model="form.status">
+                        <option value="">—</option>
+                        <option v-for="(label, key) in statusLabels[work.category]" :key="key" :value="key">{{ label }}</option>
+                      </select>
+                    </label>
+                    <label class="mf-label mf-xs" v-if="work.category !== 'game'">
+                      <span>进度</span>
+                      <input v-model.number="form.progress_value" type="number" min="0" placeholder="0" />
+                    </label>
+                  </div>
+                  <label class="mf-label">
+                    <span>简介</span>
+                    <textarea v-model="form.summary" rows="3" placeholder="作品简介..." />
+                  </label>
+                </div>
+              </div>
+
+              <!-- Section 2: 追踪信息 -->
+              <div class="modal-section">
+                <h3 class="modal-section-title">追踪信息</h3>
+                <div class="modal-fields">
+                  <div class="mf-row">
+                    <label class="mf-label mf-sm">
+                      <span>开始时间</span>
+                      <input v-model="form.start_date" type="date" />
+                    </label>
+                    <label class="mf-label mf-sm">
+                      <span>完成时间</span>
+                      <input v-model="form.finish_date" type="date" />
+                    </label>
+                  </div>
+                  <div class="mf-row">
+                    <label class="mf-label mf-sm">
+                      <span>平台</span>
+                      <input v-model="form.platform" placeholder="Bilibili / Netflix / Steam..." />
+                    </label>
+                    <label class="mf-label mf-xs">
+                      <span>优先度</span>
+                      <input v-model.number="form.priority" type="number" min="0" max="5" placeholder="0-5" />
+                    </label>
+                  </div>
+                  <label class="mf-label">
+                    <span>外部链接</span>
+                    <input v-model="form.external_links" placeholder='{"steam":"https://..."}' />
+                  </label>
+                </div>
+              </div>
+
+              <!-- Section 3: 游戏专属 -->
+              <div class="modal-section" v-if="work.category === 'game'">
+                <h3 class="modal-section-title">游戏专属</h3>
+                <div class="modal-fields">
+                  <div class="mf-row">
+                    <label class="mf-label mf-sm">
+                      <span>购买平台</span>
+                      <input v-model="form.purchase_platform" placeholder="Steam / PS5 / 实体..." />
+                    </label>
+                    <label class="mf-label mf-sm">
+                      <span>购买时间</span>
+                      <input v-model="form.purchase_date" type="date" />
+                    </label>
+                  </div>
+                  <div class="mf-row">
+                    <label class="mf-label mf-sm">
+                      <span>购买价格</span>
+                      <input v-model.number="form.purchase_price" type="number" min="0" step="0.01" placeholder="0" />
+                    </label>
+                    <label class="mf-label mf-sm">
+                      <span>游戏时长（小时）</span>
+                      <input v-model.number="form.playtime_hours" type="number" min="0" step="0.1" placeholder="0" />
+                    </label>
+                  </div>
+                  <label class="mf-label mf-xs">
+                    <span>重刷次数</span>
+                    <input v-model.number="form.replay_count" type="number" min="0" placeholder="0" />
+                  </label>
+                </div>
+              </div>
+
+              <!-- Section 4: 评分评价 -->
+              <div class="modal-section">
+                <h3 class="modal-section-title">评分评价</h3>
+                <div class="modal-fields">
+                  <label class="mf-label">
+                    <span>评分 {{ form.rating != null ? form.rating + '/10' : '—' }}</span>
+                    <input v-model.number="form.rating" type="range" min="0" max="10" class="rating-slider" />
+                  </label>
+                  <label class="mf-label">
+                    <span>评价</span>
+                    <textarea v-model="form.review" rows="3" placeholder="写下你的评价..." />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal-ft">
+              <button class="modal-cancel" @click="closeEdit">取消</button>
+              <button class="modal-save" @click="saveEdit" :disabled="saving">
+                {{ saving ? '保存中...' : '保存' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
+</template>
+
+<style scoped>
+/* ===== Layout ===== */
+.page { padding: 20px 16px; }
+@media (min-width: 768px) { .page { padding: 24px 32px; } }
+.page-inner { max-width: 960px; margin: 0 auto; }
+.loading, .empty { text-align: center; padding: 80px 20px; color: var(--text-tertiary); }
+
+/* ===== Header ===== */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+.back-btn:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
+.top-actions { display: flex; gap: 8px; }
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+.act-btn:hover { background: var(--bg-surface); }
+.act-btn.edit:hover { color: var(--primary); }
+.act-btn.del:hover { color: var(--c-anime); }
+.act-btn:disabled { opacity: 0.4; }
+
+/* ===== Hero (cover + info) ===== */
+.hero {
+  display: flex;
+  gap: 28px;
+  margin-bottom: 24px;
+}
+@media (max-width: 767px) {
+  .hero { flex-direction: column; align-items: center; gap: 20px; }
+}
+
+/* Cover card */
+.cover-w { flex-shrink: 0; }
+.cover-card {
+  position: relative;
+  width: 240px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 3px var(--cat-color),
+    0 0 0 8px rgba(255,255,255,0.7),
+    0 0 0 9px var(--frame-outer-line),
+    0 8px 30px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s;
+}
+.cover-card::before,
+.cover-card::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: calc(var(--radius-lg) - 2px);
+}
+.cover-card::before {
+  background:
+    conic-gradient(from 90deg at 6px 6px, transparent 90deg, var(--cat-color) 90deg) top left / 14px 14px no-repeat,
+    conic-gradient(from 270deg at 6px 6px, transparent 90deg, var(--cat-color) 90deg) bottom right / 14px 14px no-repeat;
+}
+.cover-card::after {
+  background:
+    conic-gradient(from 180deg at 6px 6px, transparent 90deg, var(--cat-color) 90deg) top right / 14px 14px no-repeat,
+    conic-gradient(from 0deg at 6px 6px, transparent 90deg, var(--cat-color) 90deg) bottom left / 14px 14px no-repeat;
+}
+.cover-card:hover {
+  box-shadow:
+    0 0 0 3px var(--cat-color),
+    0 0 0 8px rgba(255,255,255,0.7),
+    0 0 0 9px var(--frame-outer-line),
+    0 0 30px 3px var(--cat-color, rgba(255,122,0,0.25)),
+    0 12px 36px rgba(0,0,0,0.12);
+}
+.cover-img {
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.5s cubic-bezier(.2,0,0,1);
+  position: relative;
+}
+.cover-card:hover .cover-img { transform: scale(1.04); }
+.cover-placeholder { display: flex; align-items: center; justify-content: center; }
+
+/* Holo sweep on hover */
+.cover-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(105deg,
+    transparent 40%,
+    rgba(255,255,255,0.08) 45%,
+    rgba(255,255,255,0.18) 50%,
+    rgba(255,255,255,0.08) 55%,
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.cover-card:hover .cover-img::after {
+  opacity: 1;
+  animation: holo-sweep 2s ease-in-out infinite;
+}
+@keyframes holo-sweep {
+  0%   { transform: translateX(-120%) skewX(-12deg); }
+  100% { transform: translateX(120%) skewX(-12deg); }
+}
+
+@media (max-width: 767px) {
+  .cover-card { width: 200px; }
+}
+
+/* Info card */
+.info-col { flex: 1; min-width: 0; }
+.info-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow:
+    0 0 0 1px var(--frame-outer-line),
+    0 0 0 2px rgba(255,255,255,0.5),
+    0 0 0 3px var(--cat-color, transparent),
+    var(--shadow-md);
+  position: relative;
+}
+.info-hd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.3px; line-height: 1.2; }
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+  margin-bottom: 14px;
+}
+.sep { opacity: 0.3; }
+
+/* Status stamp */
+.stamp-row { margin-bottom: 18px; }
+.status-stamp {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 0.8px;
+  background: var(--st-bg);
+  transform: rotate(2deg);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  animation: stamp-in 0.4s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes stamp-in {
+  0%   { transform: rotate(3deg) scale(0); opacity: 0; }
+  60%  { transform: rotate(3deg) scale(1.08); }
+  100% { transform: rotate(2deg) scale(1); opacity: 1; }
+}
+
+/* Bangumi info inside card */
+.section-label {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+.info-rows { display: flex; flex-direction: column; gap: 2px; margin-bottom: 16px; }
+.ir {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 3px 0;
+}
+.ir-tags { align-items: flex-start; }
+.ir-l {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  min-width: 80px;
+}
+.ir-v {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.b-tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--bg-input);
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.summary {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+  line-height: 1.7;
+}
+
+/* ===== Tracking card ===== */
+.tracking-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  border-left: 3px solid var(--cat-color);
+  box-shadow: var(--shadow-sm);
+}
+.tracking-header { margin-bottom: 16px; }
+.tracking-title {
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tracking-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.tk-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-sm);
+}
+.tk-full { grid-column: 1 / -1; }
+.tk-l {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tk-v { font-size: var(--fs-sm); color: var(--text-secondary); word-break: break-all; }
+
+.tk-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 20px 0;
+}
+.tk-section { margin-bottom: 14px; }
+.tk-section:last-child { margin-bottom: 0; }
+.section-label-sm {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.rating-display { font-size: var(--fs-lg); font-weight: 700; color: var(--text-secondary); }
+.review-text { font-size: var(--fs-base); color: var(--text-secondary); line-height: 1.7; }
+
+/* ===== Game profiles (horizontal bars) ===== */
+.gp-section { margin-bottom: 24px; }
+.gp-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.gp-title { font-size: var(--fs-lg); font-weight: 700; }
+.add-gp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  transition: all 0.15s;
+}
+.add-gp-btn:hover { background: rgba(255, 107, 53, 0.14); }
+
+.gp-bars { display: flex; flex-direction: column; gap: 8px; }
+.gp-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--gp-accent);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.gp-bar:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateX(2px);
+}
+.gp-name { font-size: var(--fs-base); font-weight: 700; flex-shrink: 0; min-width: 60px; }
+.gp-st {
+  font-size: 10px;
+  font-weight: 800;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+  transform: rotate(2deg);
+  flex-shrink: 0;
+}
+.gp-prog {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 80px;
+}
+.gp-exp-rail {
+  height: 5px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 3px;
+  overflow: hidden;
+  flex: 1;
+}
+.gp-exp-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.4s cubic-bezier(.2,0,0,1);
+  position: relative;
+  overflow: hidden;
+  min-width: 3px;
+}
+.gp-exp-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.35) 50%, transparent 70%);
+  animation: gp-shimmer 3s ease-in-out infinite;
+}
+@keyframes gp-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.gp-prog-lbl {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  min-width: 42px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.gp-prog-none { font-size: 11px; color: var(--text-tertiary); }
+.gp-rating {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.gp-empty { text-align: center; padding: 32px 20px; color: var(--text-tertiary); font-size: var(--fs-sm); }
+
+@media (max-width: 767px) {
+  .gp-bar { flex-wrap: wrap; gap: 8px; }
+  .gp-prog { min-width: 100%; order: 3; }
+  .gp-rating { margin-left: auto; }
+}
+
+/* ===== Edit Modal ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  padding: 16px;
+}
+.modal-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.modal-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+.modal-hd h2 { font-size: var(--fs-xl); font-weight: 800; }
+.modal-close {
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+.modal-close:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.modal-body { padding: 16px 24px 8px; }
+.modal-section { margin-bottom: 20px; }
+.modal-section-title {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+.modal-fields { display: flex; flex-direction: column; gap: 10px; }
+.mf-label { display: flex; flex-direction: column; gap: 4px; }
+.mf-label span {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+}
+.mf-label input, .mf-label select, .mf-label textarea {
+  padding: 8px 12px;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--bg-primary);
+  transition: border-color 0.15s;
+}
+.mf-label input:focus, .mf-label select:focus, .mf-label textarea:focus {
+  border-color: var(--text-tertiary);
+  background: var(--bg-surface);
+  outline: none;
+}
+.mf-row { display: flex; gap: 10px; }
+.mf-sm { flex: 1; }
+.mf-xs { width: 100px; flex-shrink: 0; }
+.rating-slider {
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--bg-input);
+  border-radius: 3px;
+  outline: none;
+  padding: 0;
+}
+.rating-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.modal-ft {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--color-border);
+}
+.modal-cancel {
+  height: 36px;
+  padding: 0 20px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+.modal-cancel:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
+.modal-save {
+  height: 36px;
+  padding: 0 24px;
+  border-radius: var(--radius-md);
+  background: var(--primary);
+  color: white;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  transition: all 0.15s;
+}
+.modal-save:hover { background: var(--primary-hover); }
+.modal-save:disabled { opacity: 0.5; }
+
+/* Modal transitions */
+.modal-enter-active, .modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+.modal-enter-active .modal-card, .modal-leave-active .modal-card {
+  transition: transform 0.2s cubic-bezier(.2,0,0,1);
+}
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from .modal-card { transform: scale(0.95) translateY(10px); }
+.modal-leave-to .modal-card { transform: scale(0.95) translateY(10px); }
+</style>

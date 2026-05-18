@@ -1,77 +1,55 @@
-# Task Plan: list-mate Iter 1 — 核心记录
+# Task Plan: list-mate Iter 1 — 卡册风全面重构
 
 ## Goal
-实现 list-mate 的 Iter 1（核心记录）：后端全部 API + 前端作品管理、进度记录核心流程跑通。
+完成 list-mate 的 Iter 1（核心记录 + 卡册风 UI）：后端 GameProfile 扩展 + 前端所有页面卡册风重构 + 搜索/添加页。
 
 ## Current Phase
-Phase 4
+全部完成，待用户验证
 
 ## Phases
 
-### Phase 1: 后端项目初始化 + 数据模型
-- [x] 创建 FastAPI 项目结构
-- [x] 编写数据库模型（Work / Profile / Tag / WorkTag）
-- [x] 实现 database.py 和 config.py
-- [x] 验证数据库初始化可运行
+### Phase 1: 后端 GameProfile 模型扩展
+- [x] GameProfile 模型新增 start_date, finish_date, playtime_hours, source, mods_list, notes, progress_type 字段
+- [x] 更新 Create/Update/Response schemas
+- [x] database.py 添加 migration
+- [x] game_profiles.py router 智能默认值 + progress_type 感知自动完成
+- [x] 新增 ProgressType 枚举 (none/count/percent)
 - **Status:** complete
 
-### Phase 2: 后端 API — Works + Bangumi
-- [x] Work CRUD API（增删改查 + 筛选分页）
-- [x] Bangumi 搜索代理 API
-- [x] 封面缓存逻辑（搜索时自动下载存 BLOB）
+### Phase 2: 前端 WorkDetail 重构
+- [x] 卡册风布局：封面放大至 240px，多层卡牌边框 + 四角品类色装饰 + 全息闪光 hover
+- [x] 右侧信息卡：Bangumi 官方数据展示（品类色卡牌边框）
+- [x] 底部追踪卡：个人追踪字段网格 + 左边框品类色点缀
+- [x] 编辑模态对话框：四段字段分组（基本信息/追踪信息/游戏专属/评分评价）
+- [x] 游戏配置横向条状卡片展示 + progress_type 感知进度显示
+- [x] 移除独立编辑路由，改用模态对话框
 - **Status:** complete
 
-### Phase 3: 后端 API — Profiles + Tags
-- [x] Profiles CRUD API（含自动完成逻辑）
-- [x] Tags CRUD API
+### Phase 3: 前端 GameProfileDetail 重构
+- [x] 卡册风单卡片布局（品类色外框 + 阴影）
+- [x] 状态选择器（6 状态按钮）
+- [x] progress_type 选择器（none/count/percent）+ 自适应进度步进器
+- [x] 游玩记录：start_date, finish_date, playtime_hours, source
+- [x] 模组列表：tag 展示 + 粘贴多行添加 + 逐个删除
+- [x] 附件占位（后续版本推出）
+- [x] 评分滑块 + 评价 + 笔记
 - **Status:** complete
 
-### Phase 4: 前端项目初始化
-- [ ] Vue 3 + Vite + Vue Router 项目搭建
-- [ ] 响应式布局框架（底部导航 / 侧边栏）
-- [ ] API 调用封装（axios）
-- **Status:** pending
+### Phase 4: 前端 WorkList 调整
+- [x] 去掉列表视图 toggle（移除 viewMode ref + 按钮 + CSS）
+- [x] 保持卡片网格展示（2-5 列响应式）
+- **Status:** complete
 
-### Phase 5: 前端 — 作品列表页
-- [ ] 分类 Tab 筛选（全部/动漫/小说/漫画/游戏）
-- [ ] 卡片视图 + 列表视图
-- [ ] 状态筛选 + 搜索
-- **Status:** pending
+### Phase 5: 搜索页 + 添加页
+- [x] 新增 Search.vue：两步流程（Bangumi 搜索 → 预填确认对话框）
+- [x] 新增 Add.vue：手动填表单（与编辑对话框布局一致，四段分组）
+- [x] 路由更新：添加 /search、/add，/works/:id/edit 重定向至详情页
+- [x] TopBar/MobileNav 已有对应导航链接
+- **Status:** complete
 
-### Phase 6: 前端 — 作品详情 + Profile 管理
-- [ ] 作品详情页（封面+信息+Profile列表）
-- [ ] Profile 进度更新（一键递增/手动输入）
-- [ ] Profile 创建/编辑/删除
-- **Status:** pending
-
-### Phase 7: 前端 — 搜索添加 + 手动添加
-- [ ] Bangumi 搜索页（结果预览→填充表单）
-- [ ] 手动添加作品页
-- **Status:** pending
-
-### Phase 8: 部署
-- [ ] deploy.py 脚本
-- [ ] 本地全流程测试
-- **Status:** pending
-
-## Key Questions
-1. Bangumi API Token 是否需要配置？（需要用户提供）
-2. 封面的 BLOB 存储如何处理大文件？（SQLite BLOB 对封面的尺寸足够）
-
-## Decisions Made
-| Decision | Rationale |
-|----------|-----------|
-| Profile 统一模型替代 Progress+GameProfile | 支持二刷/多配置，数据一致 |
-| 单 Vue 3 响应式前端替代 Uni-app + Element Plus | 个人项目，减少维护量 |
-| SQLite BLOB 存封面 | 不依赖外部图片服务，加载快 |
-| 附件文件也存 BLOB（Iter 4） | 一致的数据存储方式，无需文件系统管理 |
-
-## Errors Encountered
-| Error | Attempt | Resolution |
-|-------|---------|------------|
-|       | 1       |            |
-
-## Notes
-- 先本地开发，再部署到阿里云
-- 部署模式沿用 goal-mate 的 deploy.py + nginx
-- Iter 1 仅实现 P0 功能，Iter 2 之后的标签/统计/时间线不做
+### Phase 6: 文档同步
+- [x] docs/design.md v2.0
+- [x] CLAUDE.md / README.md / roadmap.md
+- [x] frontend/README.md
+- [x] docs/ui-design-spec.md deprecated
+- **Status:** complete

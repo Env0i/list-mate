@@ -17,22 +17,21 @@ backend/            # FastAPI 后端
     main.py         # 入口 + 动态迁移
     database.py     # SQLite 连接
     config.py       # 配置
-    models/         # ORM 模型 (Work, Profile, Tag, WorkTag, Attachment, TimelineEntry)
+    models/         # ORM 模型 (Work, GameProfile, Tag, WorkTag, Attachment, TimelineEntry)
     schemas/        # Pydantic 请求/响应模型
-    routers/        # API 路由 (works, profiles, tags, bangumi, stats)
+    routers/        # API 路由 (works, game_profiles, tags, bangumi)
   bangumi_cache/    # 封面图片缓存目录（或存 BLOB，见设计文档）
   list_mate.db      # SQLite 数据库
   requirements.txt
   run.py            # 启动入口
 
-frontend/           # Vue 3 前端（原来称 mobile/）
+frontend/           # Vue 3 前端
   src/
-    api/            # API 调用封装
-    assets/icons/   # iconfont SVG 图标（品类图标、导航图标）
+    api/            # API 调用封装 (worksApi, gameProfilesApi, bangumiApi, tagsApi)
     components/     # 通用组件
       layout/       # TopBar（桌面导航）、MobileNav（手机底部导航）
-      work/         # WorkCardGrid、ProgressBar、StatusBadge
-    views/          # 页面组件
+      work/         # WorkCardGrid、ProgressBar、CategoryBadge
+    views/          # 页面组件 (WorkList, WorkDetail, GameProfileDetail, GameProfileNew, Search, Add)
     router/         # 路由配置
     style.css       # 全局 CSS 变量、品类色、动画关键帧
     App.vue         # 根组件（TopBar + router-view + MobileNav）
@@ -45,17 +44,19 @@ frontend/           # Vue 3 前端（原来称 mobile/）
 - **单前端 + 响应式**: 不做 Uni-app 原生编译，一套 Vue 3 代码适配手机和桌面
 - **封面缓存**: Bangumi 图片存为 BLOB，不依赖外部服务展示
 - **进度自动完成**: progress_value >= total (>0) 时自动标记 completed，可手动覆盖
+- **GameProfile 进度类型**: progress_type 决定进度含义 — count（通关次数）、percent（完成百分比）、none（纯状态）
 - **多附件**: 每个 GameProfile 可挂多个附件（不限定格式）
+- **编辑方式**: 模态对话框编辑，无独立编辑页
 - **开发本地 → 部署服务器**: 本地开发完成后用 deploy.py 上传到阿里云
 
 ## 迭代计划
 
 | Iter | 范围 |
 |------|------|
-| Iter 1 | 作品 CRUD + Bangumi 搜索 + 多 Profile 进度管理 |
+| Iter 1 | 作品 CRUD + Bangumi 搜索 + GameProfile 多配置 + 卡册风前端 |
 | Iter 2 | 自定义标签 + 评分评价 + 标签筛选 |
 | Iter 3 | 统计仪表盘 + 操作时间线 |
-| Iter 4 | 附件上传 + 数据导出 + 扩展功能 |
+| Iter 4 | 附件管理 + 数据导出 + 扩展功能 |
 
 ## 关键约定
 
