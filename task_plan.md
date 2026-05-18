@@ -49,10 +49,36 @@ Iter 2 已完成，待用户验证
 - [x] 游戏作品评分在 GameProfileDetail 正常（Iter 1 已实现）
 - **Status:** complete
 
-## Iter 3: 统计仪表盘 + 操作时间线 (待开始)
-- 收藏统计图表（品类分布、状态分布、评分分布）
-- 操作时间线（添加、完成、评分变更等历史记录）
-- 进度追踪总览
+## Iter 3: 统计仪表盘 + 操作时间线 ✅
+
+### Phase 1: 后端 — TimelineEntry 模型
+- [x] 新建 `models/timeline.py` — TimelineEntry (id, work_id, game_profile_id, action_type, old_value, new_value, created_at)
+- [x] 更新 `models/__init__.py` 注册模型
+- [x] `database.py` 自动建表 (create_all)
+- **Status:** complete
+
+### Phase 2: 后端 — Stats API
+- [x] 新建 `schemas/stats.py` — StatsResponse, CategoryCount, StatusCount, RatingBucket
+- [x] 新建 `routers/stats.py` — GET /api/stats (品类/状态/评分聚合查询)
+- [x] 注册路由到 main.py
+- **Status:** complete
+
+### Phase 3: 后端 — Timeline API + 自动记录
+- [x] 新建 `schemas/timeline.py` — TimelineEntryResponse, PaginatedTimeline
+- [x] 新建 `routers/timeline.py` — GET /api/timeline + record_timeline() 工具函数
+- [x] `works.py` create_work / update_work 自动记录时间线 (created, status_change, rating_change, review_change, progress_update)
+- [x] `game_profiles.py` create/update 自动记录时间线
+- [x] 注册路由到 main.py
+- [x] 修复 create_work 中 `create_data` 未定义的 bug (缺少 `data.model_dump()`)
+- **Status:** complete
+
+### Phase 4: 前端 — 统计仪表盘 + 时间线
+- [x] `client.js` 新增 statsApi.get() / timelineApi.list()
+- [x] `StatsPlaceholder.vue` → 完整统计仪表盘
+  - 品类分布卡片（4 张彩色概览卡 + 总计卡）
+  - 品类/状态/评分分布柱状图（纯 CSS bar chart）
+  - 最近动态时间线（彩色圆点 + 操作类型 + 新旧值 + 相对时间）
+- **Status:** complete
 
 ## Iter 4: 附件管理 + 数据导出 + 扩展 (待开始)
 - 文件上传/下载

@@ -31,3 +31,11 @@ export const tagsApi = {
   update(id, data) { return client.put(`/tags/${id}`, data) },
   delete(id) { return client.delete(`/tags/${id}`) },
 }
+
+export const statsApi = {
+  get() { return client.get('/stats') },
+}
+
+export const timelineApi = {
+  list(params) { return client.get('/timeline', { params }) },
+}

@@ -5,6 +5,7 @@ from ..database import get_db
 from ..models.work import Work
 from ..models.game_profile import GameProfile, GameStatus, ProgressType
 from ..schemas.game_profile import GameProfileCreate, GameProfileUpdate, GameProfileResponse
+from .timeline import record_timeline
 
 router = APIRouter(tags=["game-profiles"])
 
@@ -26,6 +27,9 @@ def create_game_profile(work_id: int, data: GameProfileCreate, db: Session = Dep
         gp.progress_type = _guess_progress_type(gp.name)
 
     db.add(gp)
+    db.flush()
+    record_timeline(db, work_id, "created", game_profile_id=gp.id,
+                    new_value={"name": gp.name, "status": gp.status.value})
     db.commit()
     db.refresh(gp)
     return gp
@@ -48,6 +52,20 @@ def update_game_profile(profile_id: int, data: GameProfileUpdate, db: Session = 
     update_data = data.model_dump(exclude_unset=True)
     user_set_status = "status" in update_data
 
+    # Record timeline for changed fields
+    if "status" in update_data and update_data["status"] != gp.status.value:
+        record_timeline(db, gp.work_id, "status_change", game_profile_id=gp.id,
+                        old_value=gp.status.value, new_value=update_data["status"])
+    if "rating" in update_data and update_data["rating"] != gp.rating:
+        record_timeline(db, gp.work_id, "rating_change", game_profile_id=gp.id,
+                        old_value=gp.rating, new_value=update_data["rating"])
+    if "review" in update_data and update_data["review"] != gp.review:
+        record_timeline(db, gp.work_id, "review_change", game_profile_id=gp.id,
+                        old_value=gp.review, new_value=update_data["review"])
+    if "progress_value" in update_data and update_data["progress_value"] != gp.progress_value:
+        record_timeline(db, gp.work_id, "progress_update", game_profile_id=gp.id,
+                        old_value=gp.progress_value, new_value=update_data["progress_value"])
+
     if user_set_status and update_data["status"] != GameStatus.COMPLETED.value:
         update_data["auto_completed"] = False
 
@@ -61,6 +79,8 @@ def update_game_profile(profile_id: int, data: GameProfileUpdate, db: Session = 
             and gp.progress_value >= 100
             and not gp.auto_completed
         ):
+            record_timeline(db, gp.work_id, "status_change", game_profile_id=gp.id,
+                            old_value=gp.status.value, new_value=GameStatus.COMPLETED.value)
             gp.status = GameStatus.COMPLETED
             gp.auto_completed = True
 

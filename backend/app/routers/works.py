@@ -9,6 +9,7 @@ from ..models.work import Work, WorkStatus
 from ..models.game_profile import GameProfile
 from ..models.tag import Tag, WorkTag
 from ..schemas.work import WorkCreate, WorkUpdate, WorkResponse, WorkListItem, PaginatedWorks
+from .timeline import record_timeline
 from ..schemas.game_profile import GameProfileResponse
 from ..schemas.tag import TagResponse
 
@@ -107,6 +108,7 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
         except httpx.RequestError:
             pass
 
+    create_data = data.model_dump()
     tag_ids = create_data.pop("tag_ids", [])
     create_data = {k: v for k, v in create_data.items() if v is not None}
 
@@ -130,6 +132,8 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
         tag = db.query(Tag).get(tid)
         if tag:
             db.add(WorkTag(work_id=work.id, tag_id=tid))
+
+    record_timeline(db, work.id, "created", new_value={"title": work.title, "category": work.category.value})
 
     db.commit()
     db.refresh(work)
@@ -165,6 +169,21 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
     if user_set_status and update_data["status"] != WorkStatus.COMPLETED.value:
         update_data["auto_completed"] = False
 
+    # Record timeline for changed fields (before applying)
+    if "status" in update_data and update_data["status"] != (work.status.value if work.status else None):
+        record_timeline(db, work.id, "status_change",
+                        old_value=work.status.value if work.status else None,
+                        new_value=update_data["status"])
+    if "rating" in update_data and update_data["rating"] != work.rating:
+        record_timeline(db, work.id, "rating_change",
+                        old_value=work.rating, new_value=update_data["rating"])
+    if "review" in update_data and update_data["review"] != work.review:
+        record_timeline(db, work.id, "review_change",
+                        old_value=work.review, new_value=update_data["review"])
+    if "progress_value" in update_data and update_data["progress_value"] != work.progress_value:
+        record_timeline(db, work.id, "progress_update",
+                        old_value=work.progress_value, new_value=update_data["progress_value"])
+
     for key, value in update_data.items():
         setattr(work, key, value)
 
@@ -184,6 +203,8 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
             and work.progress_value >= work.total
             and not work.auto_completed
         ):
+            record_timeline(db, work.id, "status_change",
+                            old_value=work.status.value, new_value=WorkStatus.COMPLETED.value)
             work.status = WorkStatus.COMPLETED
             work.auto_completed = True
 
