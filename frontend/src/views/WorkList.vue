@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { worksApi } from '../api/client'
+import { worksApi, tagsApi } from '../api/client'
 import WorkCardGrid from '../components/work/WorkCardGrid.vue'
 
 const router = useRouter()
@@ -10,13 +10,19 @@ const activeSt = ref('all')
 const q = ref('')
 const works = ref([])
 const loading = ref(true)
+const tags = ref([])
+const activeTagId = ref(null)
 
 onMounted(async () => {
   try {
-    const { data } = await worksApi.list({ page_size: 100 })
-    works.value = data.items
+    const [worksRes, tagsRes] = await Promise.all([
+      worksApi.list({ page_size: 100 }),
+      tagsApi.list(),
+    ])
+    works.value = worksRes.data.items
+    tags.value = tagsRes.data
   } catch (e) {
-    console.error('Failed to load works', e)
+    console.error('Failed to load data', e)
   } finally {
     loading.value = false
   }
@@ -76,6 +82,7 @@ const filtered = computed(() =>
   works.value.filter(w => {
     if (activeCat.value !== 'all' && w.category !== activeCat.value) return false
     if (activeSt.value !== 'all' && workStatus(w) !== activeSt.value) return false
+    if (activeTagId.value && !(w.tag_ids || []).includes(activeTagId.value)) return false
     if (q.value && !w.title.includes(q.value)) return false
     return true
   })
@@ -125,6 +132,26 @@ function catStyle(c) {
       <div class="st-row">
         <button v-for="s in sts" :key="s.key" class="st-filter" :class="{ on: activeSt === s.key }" @click="activeSt = s.key">
           {{ s.label }}
+        </button>
+      </div>
+
+      <!-- Tag filter chips -->
+      <div v-if="tags.length" class="tag-row">
+        <button
+          class="tag-filter"
+          :class="{ on: activeTagId === null }"
+          @click="activeTagId = null"
+        >全部标签</button>
+        <button
+          v-for="t in tags"
+          :key="t.id"
+          class="tag-filter"
+          :class="{ on: activeTagId === t.id }"
+          :style="activeTagId === t.id ? { background: t.color, color: '#fff', borderColor: t.color } : { color: t.color, borderColor: t.color + '40' }"
+          @click="activeTagId = activeTagId === t.id ? null : t.id"
+        >
+          <span class="tag-filter-dot" :style="{ background: t.color }" />
+          {{ t.name }}
         </button>
       </div>
 
@@ -264,6 +291,38 @@ function catStyle(c) {
   background: var(--bg-surface);
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
   color: var(--text-primary);
+}
+
+/* ======== Tag filter chips ======== */
+.tag-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+.tag-row::-webkit-scrollbar { display: none; }
+.tag-filter {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 12px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+.tag-filter:hover { opacity: 0.8; }
+.tag-filter.on { font-weight: 700; }
+.tag-filter-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 /* ======== Loading ======== */

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { worksApi } from '../api/client'
+import { worksApi, tagsApi } from '../api/client'
 import CategoryBadge from '../components/work/CategoryBadge.vue'
 import ProgressBar from '../components/work/ProgressBar.vue'
 
@@ -13,6 +13,9 @@ const deleting = ref(false)
 const saving = ref(false)
 const showEditModal = ref(false)
 const form = ref({})
+const allTags = ref([])
+const selectedTagIds = ref([])
+const tagLoading = ref(false)
 
 const statusLabels = {
   anime: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
@@ -103,9 +106,22 @@ async function del() {
   }
 }
 
-function openEdit() {
+async function openEdit() {
   form.value = { ...work.value }
+  selectedTagIds.value = (work.value.tags || []).map(t => t.id)
   showEditModal.value = true
+  tagLoading.value = true
+  try {
+    const { data } = await tagsApi.list()
+    allTags.value = data
+  } catch (e) { console.error('Failed to load tags', e) }
+  finally { tagLoading.value = false }
+}
+
+function toggleTag(tid) {
+  const idx = selectedTagIds.value.indexOf(tid)
+  if (idx >= 0) selectedTagIds.value.splice(idx, 1)
+  else selectedTagIds.value.push(tid)
 }
 
 function closeEdit() {
@@ -115,8 +131,11 @@ function closeEdit() {
 async function saveEdit() {
   saving.value = true
   try {
-    await worksApi.update(route.params.id, form.value)
+    const payload = { ...form.value, tag_ids: selectedTagIds.value }
+    await worksApi.update(route.params.id, payload)
     work.value = { ...work.value, ...form.value }
+    // Update local tags from allTags
+    work.value.tags = allTags.value.filter(t => selectedTagIds.value.includes(t.id))
     showEditModal.value = false
   } catch (e) {
     console.error('Failed to save', e)
@@ -207,6 +226,16 @@ onMounted(load)
 
             <div class="stamp-row">
               <span class="status-stamp" :style="{ '--st-bg': stBg }">{{ stLabel }}</span>
+            </div>
+
+            <!-- Personal tags -->
+            <div v-if="work.tags?.length" class="ptags-row">
+              <span
+                v-for="t in work.tags"
+                :key="t.id"
+                class="ptag-chip"
+                :style="{ background: t.color + '20', color: t.color, borderColor: t.color + '40' }"
+              >{{ t.name }}</span>
             </div>
 
             <!-- Bangumi info -->
@@ -436,6 +465,23 @@ onMounted(load)
                     <textarea v-model="form.summary" rows="3" placeholder="作品简介..." />
                   </label>
                 </div>
+              </div>
+
+              <!-- Tags -->
+              <div class="modal-section">
+                <h3 class="modal-section-title">标签</h3>
+                <div v-if="tagLoading" class="tag-loading">加载标签中...</div>
+                <div v-else-if="allTags.length" class="tag-chips">
+                  <button
+                    v-for="t in allTags"
+                    :key="t.id"
+                    class="tchip"
+                    :class="{ on: selectedTagIds.includes(t.id) }"
+                    :style="selectedTagIds.includes(t.id) ? { background: t.color, color: '#fff', borderColor: t.color } : { color: t.color, borderColor: t.color + '40' }"
+                    @click="toggleTag(t.id)"
+                  >{{ t.name }}</button>
+                </div>
+                <p v-else class="tag-none">暂无标签，前往 <router-link to="/tags" class="tag-link">标签管理</router-link> 创建</p>
               </div>
 
               <!-- Section 2: 追踪信息 -->
@@ -1061,4 +1107,28 @@ onMounted(load)
 .modal-enter-from, .modal-leave-to { opacity: 0; }
 .modal-enter-from .modal-card { transform: scale(0.95) translateY(10px); }
 .modal-leave-to .modal-card { transform: scale(0.95) translateY(10px); }
+
+/* Personal tags in info card */
+.ptags-row {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 18px;
+}
+.ptag-chip {
+  font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: 4px;
+  border: 1px solid;
+}
+
+/* Tag selector in modal */
+.tag-loading, .tag-none { font-size: var(--fs-xs); color: var(--text-tertiary); }
+.tag-link { color: var(--primary); text-decoration: underline; }
+.tag-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tchip {
+  font-size: var(--fs-xs); font-weight: 600;
+  padding: 4px 12px; border-radius: var(--radius-full);
+  border: 1px solid; background: transparent;
+  cursor: pointer; transition: all 0.15s;
+}
+.tchip:hover { opacity: 0.8; }
+.tchip.on { font-weight: 700; }
 </style>

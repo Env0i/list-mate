@@ -1,55 +1,60 @@
-# Task Plan: list-mate Iter 1 — 卡册风全面重构
-
-## Goal
-完成 list-mate 的 Iter 1（核心记录 + 卡册风 UI）：后端 GameProfile 扩展 + 前端所有页面卡册风重构 + 搜索/添加页。
+# Task Plan: list-mate
 
 ## Current Phase
-全部完成，待用户验证
+Iter 2 已完成，待用户验证
 
-## Phases
+## Iter 1: 卡册风全面重构 ✅
+全部完成，已提交 `4f6ccc0`。
 
-### Phase 1: 后端 GameProfile 模型扩展
-- [x] GameProfile 模型新增 start_date, finish_date, playtime_hours, source, mods_list, notes, progress_type 字段
-- [x] 更新 Create/Update/Response schemas
-- [x] database.py 添加 migration
-- [x] game_profiles.py router 智能默认值 + progress_type 感知自动完成
-- [x] 新增 ProgressType 枚举 (none/count/percent)
+## Iter 2: 自定义标签 + 评分评价 + 标签筛选 ✅
+
+### Phase 1: 后端 — tag_ids 支持
+- [x] WorkCreate 新增 tag_ids 字段
+- [x] WorkUpdate 新增 tag_ids 字段
+- [x] WorkListItem 新增 tag_ids 字段（用于客户端筛选）
+- [x] create_work 处理 tag 关联
+- [x] update_work 同步 tag 关联
 - **Status:** complete
 
-### Phase 2: 前端 WorkDetail 重构
-- [x] 卡册风布局：封面放大至 240px，多层卡牌边框 + 四角品类色装饰 + 全息闪光 hover
-- [x] 右侧信息卡：Bangumi 官方数据展示（品类色卡牌边框）
-- [x] 底部追踪卡：个人追踪字段网格 + 左边框品类色点缀
-- [x] 编辑模态对话框：四段字段分组（基本信息/追踪信息/游戏专属/评分评价）
-- [x] 游戏配置横向条状卡片展示 + progress_type 感知进度显示
-- [x] 移除独立编辑路由，改用模态对话框
+### Phase 2: 标签管理页
+- [x] 替换 TagsPlaceholder.vue 为真实 CRUD
+- [x] 标签列表展示（颜色圆点 + 名称 + 编辑/删除按钮）
+- [x] 新建标签（名称 + 预设色板 + 自定义颜色）
+- [x] 编辑标签（行内编辑：名称 + 颜色）
+- [x] 删除标签（确认对话框）
 - **Status:** complete
 
-### Phase 3: 前端 GameProfileDetail 重构
-- [x] 卡册风单卡片布局（品类色外框 + 阴影）
-- [x] 状态选择器（6 状态按钮）
-- [x] progress_type 选择器（none/count/percent）+ 自适应进度步进器
-- [x] 游玩记录：start_date, finish_date, playtime_hours, source
-- [x] 模组列表：tag 展示 + 粘贴多行添加 + 逐个删除
-- [x] 附件占位（后续版本推出）
-- [x] 评分滑块 + 评价 + 笔记
+### Phase 3: 标签展示
+- [x] WorkDetail 信息卡在状态印章下方显示作品标签
+- [x] 标签 chip 使用标签颜色 + 透明背景 + 有色边框
 - **Status:** complete
 
-### Phase 4: 前端 WorkList 调整
-- [x] 去掉列表视图 toggle（移除 viewMode ref + 按钮 + CSS）
-- [x] 保持卡片网格展示（2-5 列响应式）
+### Phase 4: 标签分配
+- [x] WorkDetail 编辑对话框新增标签多选区域
+- [x] 打开编辑时加载全部标签，已分配标签高亮
+- [x] 点击 chip 切换标签选择
+- [x] 保存时提交 tag_ids
 - **Status:** complete
 
-### Phase 5: 搜索页 + 添加页
-- [x] 新增 Search.vue：两步流程（Bangumi 搜索 → 预填确认对话框）
-- [x] 新增 Add.vue：手动填表单（与编辑对话框布局一致，四段分组）
-- [x] 路由更新：添加 /search、/add，/works/:id/edit 重定向至详情页
-- [x] TopBar/MobileNav 已有对应导航链接
+### Phase 5: 标签筛选
+- [x] WorkList 加载全部标签
+- [x] 标签筛选 Chips 行（在状态筛选行下方）
+- [x] 点击标签筛选，再次点击取消
+- [x] 与分类/状态筛选同时生效（客户端过滤）
 - **Status:** complete
 
-### Phase 6: 文档同步
-- [x] docs/design.md v2.0
-- [x] CLAUDE.md / README.md / roadmap.md
-- [x] frontend/README.md
-- [x] docs/ui-design-spec.md deprecated
+### Phase 6: 评分评价验证
+- [x] 非游戏作品评分/评价在追踪卡中正确展示（Iter 1 已实现）
+- [x] 编辑对话框评分滑块和评价文本框正常（Iter 1 已实现）
+- [x] 游戏作品评分在 GameProfileDetail 正常（Iter 1 已实现）
 - **Status:** complete
+
+## Iter 3: 统计仪表盘 + 操作时间线 (待开始)
+- 收藏统计图表（品类分布、状态分布、评分分布）
+- 操作时间线（添加、完成、评分变更等历史记录）
+- 进度追踪总览
+
+## Iter 4: 附件管理 + 数据导出 + 扩展 (待开始)
+- 文件上传/下载
+- JSON/CSV 数据导出
+- 扩展功能

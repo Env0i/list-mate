@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.work import Work, WorkStatus
 from ..models.game_profile import GameProfile
-from ..models.tag import WorkTag
+from ..models.tag import Tag, WorkTag
 from ..schemas.work import WorkCreate, WorkUpdate, WorkResponse, WorkListItem, PaginatedWorks
 from ..schemas.game_profile import GameProfileResponse
 from ..schemas.tag import TagResponse
@@ -51,8 +51,14 @@ def list_works(
         .all()
     )
 
+    items = []
+    for w in works:
+        item_data = {k: v for k, v in WorkListItem.model_validate(w).model_dump().items()}
+        item_data["tag_ids"] = [wt.tag_id for wt in w.work_tags]
+        items.append(WorkListItem(**item_data))
+
     return PaginatedWorks(
-        items=[WorkListItem.model_validate(w) for w in works],
+        items=items,
         total=total,
         page=page,
         page_size=page_size,
@@ -101,7 +107,8 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
         except httpx.RequestError:
             pass
 
-    create_data = data.model_dump(exclude_unset=True)
+    tag_ids = create_data.pop("tag_ids", [])
+    create_data = {k: v for k, v in create_data.items() if v is not None}
 
     # Auto-fetch Bangumi subject data
     if data.bangumi_id and not getattr(data, 'bangumi_data', None):
@@ -117,6 +124,12 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
     if work.category == "game":
         gp = GameProfile(work_id=work.id, name="本体", sort_order=0)
         db.add(gp)
+
+    # Tag associations
+    for tid in tag_ids:
+        tag = db.query(Tag).get(tid)
+        if tag:
+            db.add(WorkTag(work_id=work.id, tag_id=tid))
 
     db.commit()
     db.refresh(work)
@@ -147,12 +160,21 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
         except httpx.RequestError:
             pass
 
+    tag_ids = update_data.pop("tag_ids", None)
     user_set_status = "status" in update_data
     if user_set_status and update_data["status"] != WorkStatus.COMPLETED.value:
         update_data["auto_completed"] = False
 
     for key, value in update_data.items():
         setattr(work, key, value)
+
+    # Sync tags if provided
+    if tag_ids is not None:
+        db.query(WorkTag).filter(WorkTag.work_id == work.id).delete()
+        for tid in tag_ids:
+            tag = db.query(Tag).get(tid)
+            if tag:
+                db.add(WorkTag(work_id=work.id, tag_id=tid))
 
     # 自动标记完成（仅非游戏作品）
     if not user_set_status and work.category != "game":

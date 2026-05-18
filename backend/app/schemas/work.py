@@ -30,6 +30,7 @@ class WorkCreate(BaseModel):
     priority: Optional[int] = None
     external_links: Optional[str] = None
     bangumi_data: Optional[str] = None
+    tag_ids: list[int] = []
 
 
 class WorkUpdate(BaseModel):
@@ -56,6 +57,7 @@ class WorkUpdate(BaseModel):
     replay_count: Optional[int] = None
     priority: Optional[int] = None
     external_links: Optional[str] = None
+    tag_ids: Optional[list[int]] = None
 
 
 class WorkListItem(BaseModel):
@@ -81,6 +83,7 @@ class WorkListItem(BaseModel):
     priority: Optional[int] = None
     created_at: datetime
     updated_at: datetime
+    tag_ids: list[int] = []
 
     model_config = {"from_attributes": True}
 
