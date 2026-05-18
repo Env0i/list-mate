@@ -14,3 +14,11 @@ class Base(DeclarativeBase):
 def init_db():
     import app.models  # noqa: F401 — registers all models with Base.metadata
     Base.metadata.create_all(bind=engine)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

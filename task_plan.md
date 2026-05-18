@@ -4,7 +4,7 @@
 实现 list-mate 的 Iter 1（核心记录）：后端全部 API + 前端作品管理、进度记录核心流程跑通。
 
 ## Current Phase
-Phase 2
+Phase 3
 
 ## Phases
 
@@ -16,10 +16,10 @@ Phase 2
 - **Status:** complete
 
 ### Phase 2: 后端 API — Works + Bangumi
-- [ ] Work CRUD API（增删改查 + 筛选分页）
-- [ ] Bangumi 搜索代理 API
-- [ ] 封面缓存逻辑（搜索时自动下载存 BLOB）
-- **Status:** pending
+- [x] Work CRUD API（增删改查 + 筛选分页）
+- [x] Bangumi 搜索代理 API
+- [x] 封面缓存逻辑（搜索时自动下载存 BLOB）
+- **Status:** complete
 
 ### Phase 3: 后端 API — Profiles + Tags
 - [ ] Profiles CRUD API（含自动完成逻辑）

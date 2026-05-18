@@ -41,9 +41,37 @@
   - backend/app/routers/profiles.py (created)
   - backend/app/routers/tags.py (created)
 
+### Phase 2: 后端 API — Works + Bangumi
+- **Status:** complete
+- **Actions taken:**
+  - 添加 get_db() 依赖到 database.py
+  - 创建 Pydantic schemas（WorkCreate/Update/Response, ProfileResponse, TagResponse, BangumiSearch）
+  - 实现 Work CRUD（列表+筛选分页+增删改查+封面对接点）
+  - 实现 Bangumi 搜索代理（search + subject detail）
+  - 封面自动缓存：创建/更新作品时自动下载 cover_url 存 BLOB
+  - 验证：9 个测试全部通过（CRUD + 筛选 + 404 + 级联删除）
+- **Files created/modified:**
+  - backend/app/database.py (modified — add get_db)
+  - backend/app/schemas/__init__.py (created)
+  - backend/app/schemas/work.py (created)
+  - backend/app/schemas/profile.py (created)
+  - backend/app/schemas/tag.py (created)
+  - backend/app/schemas/bangumi.py (created)
+  - backend/app/routers/works.py (rewritten — full CRUD)
+  - backend/app/routers/bangumi.py (rewritten — search proxy)
+
 ## Test Results
 | Test | Input | Expected | Actual | Status |
 |------|-------|----------|--------|--------|
+| List empty | GET /api/works | total=0 | total=0 | PASS |
+| Create work | POST /api/works | 201 + auto profile | 201 + profile "默认" wish | PASS |
+| List 1 item | GET /api/works | total=1 | total=1 | PASS |
+| Get detail | GET /api/works/{id} | 200 | 200 | PASS |
+| Update | PUT /api/works/{id} | title changed | title changed | PASS |
+| Category filter | ?category=game | total=0 | total=0 | PASS |
+| Status filter | ?status=wish | total=1 | total=1 | PASS |
+| 404 | GET /api/works/999 | 404 | 404 | PASS |
+| Delete | DELETE /api/works/{id} | 204 | 204 | PASS |
 
 ## Error Log
 | Timestamp | Error | Attempt | Resolution |
