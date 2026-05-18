@@ -1,10 +1,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { worksApi, gameProfilesApi } from '../api/client'
+import { worksApi, gameProfilesApi, attachmentsApi } from '../api/client'
 
 const route = useRoute()
 const router = useRouter()
+
 const gp = ref(null)
 const workTitle = ref('')
 const loading = ref(true)
@@ -12,6 +13,8 @@ const saving = ref(false)
 const deleting = ref(false)
 const showModInput = ref(false)
 const modInputText = ref('')
+const attachments = ref([])
+const uploading = ref(false)
 
 const statusOptions = [
   { key: 'wish', label: '想玩' },
@@ -56,10 +59,49 @@ async function load() {
     gp.value = data
     const workRes = await worksApi.get(data.work_id)
     workTitle.value = workRes.data.title
+    await loadAttachments()
   } catch (e) {
     console.error('Failed to load game profile', e)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadAttachments() {
+  try {
+    const { data } = await attachmentsApi.list(route.params.gpid)
+    attachments.value = data
+  } catch (e) {
+    console.error('Failed to load attachments', e)
+  }
+}
+
+async function uploadAttachment(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  uploading.value = true
+  try {
+    await attachmentsApi.upload(route.params.gpid, file)
+    await loadAttachments()
+  } catch (e) {
+    console.error('Upload failed', e)
+  } finally {
+    uploading.value = false
+    e.target.value = ''
+  }
+}
+
+function downloadAttachment(id) {
+  window.open(attachmentsApi.downloadUrl(id), '_blank')
+}
+
+async function deleteAttachment(id) {
+  if (!confirm('确定删除这个附件？')) return
+  try {
+    await attachmentsApi.delete(id)
+    attachments.value = attachments.value.filter(a => a.id !== id)
+  } catch (e) {
+    console.error('Delete failed', e)
   }
 }
 
@@ -268,10 +310,30 @@ onMounted(load)
           </div>
         </div>
 
-        <!-- Section: 附件 (placeholder) -->
+        <!-- Section: 附件 -->
         <div class="section">
           <h3 class="section-title">附件</h3>
-          <p class="placeholder-text">附件功能将在后续版本推出</p>
+          <div v-if="attachments.length" class="att-list">
+            <div v-for="att in attachments" :key="att.id" class="att-item">
+              <div class="att-info">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" class="att-icon">
+                  <path d="M7 3.5A1.5 1.5 0 005.5 5v13a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V5A1.5 1.5 0 0013 3.5H7z"/>
+                </svg>
+                <span class="att-name">{{ att.file_name }}</span>
+                <span class="att-size" v-if="att.file_size">({{ (att.file_size / 1024).toFixed(1) }} KB)</span>
+              </div>
+              <div class="att-actions">
+                <button class="att-btn" @click="downloadAttachment(att.id)">下载</button>
+                <button class="att-btn del" @click="deleteAttachment(att.id)">删除</button>
+              </div>
+            </div>
+          </div>
+          <div class="upload-row">
+            <label class="upload-btn" :class="{ uploading }">
+              <input type="file" class="file-inp" @change="uploadAttachment" :disabled="uploading" />
+              {{ uploading ? '上传中...' : '+ 上传文件' }}
+            </label>
+          </div>
         </div>
 
         <!-- Section: 评分 -->
@@ -562,8 +624,55 @@ onMounted(load)
 }
 .mod-confirm:hover { background: var(--primary-hover); }
 
-/* Attachments placeholder */
-.placeholder-text { font-size: var(--fs-sm); color: var(--text-tertiary); }
+/* Attachments */
+.att-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.att-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  border: 1px solid var(--color-border);
+}
+.att-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.att-icon { color: var(--text-tertiary); flex-shrink: 0; }
+.att-name { font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.att-size { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+.att-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.att-btn {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.1s;
+}
+.att-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.att-btn.del:hover { color: var(--c-anime); }
+.upload-row { margin-top: 2px; }
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  border: 1px dashed var(--primary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.upload-btn:hover { background: rgba(255, 107, 53, 0.14); }
+.upload-btn.uploading { opacity: 0.6; pointer-events: none; }
+.file-inp { display: none; }
 
 /* Rating */
 .rating-row {

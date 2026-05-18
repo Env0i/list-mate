@@ -39,3 +39,28 @@ export const statsApi = {
 export const timelineApi = {
   list(params) { return client.get('/timeline', { params }) },
 }
+
+export const attachmentsApi = {
+  list(gpid) { return client.get(`/game-profiles/${gpid}/attachments`) },
+  upload(gpid, file, label) {
+    const fd = new FormData()
+    fd.append('file', file)
+    if (label) fd.append('label', label)
+    return client.post(`/game-profiles/${gpid}/attachments`, fd)
+  },
+  downloadUrl(id) { return `/api/attachments/${id}` },
+  delete(id) { return client.delete(`/attachments/${id}`) },
+}
+
+export const exportApi = {
+  jsonUrl() { return '/api/export/json' },
+  csvUrl() { return '/api/export/csv' },
+}
+
+export const coverApi = {
+  upload(id, file) {
+    const fd = new FormData()
+    fd.append('file', file)
+    return client.post(`/works/${id}/cover`, fd)
+  },
+}

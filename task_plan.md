@@ -80,7 +80,34 @@ Iter 2 已完成，待用户验证
   - 最近动态时间线（彩色圆点 + 操作类型 + 新旧值 + 相对时间）
 - **Status:** complete
 
-## Iter 4: 附件管理 + 数据导出 + 扩展 (待开始)
-- 文件上传/下载
-- JSON/CSV 数据导出
-- 扩展功能
+## Iter 4: 附件管理 + 数据导出 + 扩展 ✅
+
+### Phase 1: 后端 — Attachment 模型 + API
+- [x] 新建 `models/attachment.py` — Attachment (id, game_profile_id, label, file_name, file_type, file_data, created_at)
+- [x] 新建 `schemas/attachment.py` — AttachmentResponse, AttachmentUploadResponse
+- [x] 新建 `routers/attachments.py` — POST /upload, GET /list, GET /download, DELETE
+- [x] 注册到 models/__init__.py + main.py
+- **Status:** complete
+
+### Phase 2: 后端 — 数据导出 API
+- [x] 新建 `routers/export.py` — GET /api/export/json, GET /api/export/csv
+- [x] JSON 导出全部作品（含标签、GameProfile）
+- [x] CSV 导出核心字段
+- **Status:** complete
+
+### Phase 3: 后端 — 封面上传 API
+- [x] POST /api/works/{id}/cover — 上传封面图片（单文件）
+- [x] 安装 python-multipart 依赖
+- **Status:** complete
+
+### Phase 4: 前端 — GameProfileDetail 附件管理
+- [x] 附件列表展示（文件名、大小、下载/删除按钮）
+- [x] 文件上传按钮（input type=file）
+- [x] 文件下载（新窗口打开）
+- [x] 文件删除（确认对话框）
+- **Status:** complete
+
+### Phase 5: 前端 — 封面上传 + 数据导出
+- [x] WorkDetail 封面下方"更换封面"按钮
+- [x] Stats 页 JSON/CSV 导出按钮
+- **Status:** complete

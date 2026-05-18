@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { statsApi, timelineApi } from '../api/client'
+import { exportApi } from '../api/client'
 
 const stats = ref(null)
 const timeline = ref([])
@@ -105,6 +106,22 @@ function timeAgo(ts) {
       <!-- Header -->
       <div class="hd">
         <h1 class="title">统计</h1>
+        <div class="hd-actions">
+          <a :href="exportApi.jsonUrl()" class="export-btn" download>
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+              <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z"/>
+              <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/>
+            </svg>
+            JSON
+          </a>
+          <a :href="exportApi.csvUrl()" class="export-btn" download>
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+              <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z"/>
+              <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/>
+            </svg>
+            CSV
+          </a>
+        </div>
       </div>
 
       <div v-if="loading" class="loading">加载中...</div>
@@ -196,8 +213,29 @@ function timeAgo(ts) {
 .page-inner { max-width: 1000px; margin: 0 auto; }
 
 /* Header */
-.hd { margin-bottom: 20px; }
+.hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
 .title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.5px; }
+.hd-actions { display: flex; gap: 6px; }
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--bg-surface);
+  border: 1px solid var(--color-border);
+  transition: all 0.15s;
+}
+.export-btn:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
 
 .loading { text-align: center; padding: 80px 20px; color: var(--text-tertiary); }
 
