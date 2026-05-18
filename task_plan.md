@@ -4,16 +4,16 @@
 实现 list-mate 的 Iter 1（核心记录）：后端全部 API + 前端作品管理、进度记录核心流程跑通。
 
 ## Current Phase
-Phase 1
+Phase 2
 
 ## Phases
 
 ### Phase 1: 后端项目初始化 + 数据模型
-- [ ] 创建 FastAPI 项目结构
-- [ ] 编写数据库模型（Work / Profile / Tag / WorkTag）
-- [ ] 实现 database.py 和 config.py
-- [ ] 验证数据库初始化可运行
-- **Status:** pending
+- [x] 创建 FastAPI 项目结构
+- [x] 编写数据库模型（Work / Profile / Tag / WorkTag）
+- [x] 实现 database.py 和 config.py
+- [x] 验证数据库初始化可运行
+- **Status:** complete
 
 ### Phase 2: 后端 API — Works + Bangumi
 - [ ] Work CRUD API（增删改查 + 筛选分页）

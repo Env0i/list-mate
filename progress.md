@@ -14,11 +14,32 @@
   - docs/design.md (created)
 
 ### Phase 1: 后端项目初始化 + 数据模型
-- **Status:** pending
+- **Status:** complete
 - **Actions taken:**
-  -
+  - 创建 backend/app/{models, schemas, routers} 目录结构
+  - 编写 database.py（SQLAlchemy engine + SessionLocal + Base + init_db）
+  - 编写 config.py（数据库路径 + Bangumi API 地址）
+  - 编写 Work / Profile / Tag / WorkTag 四个 ORM 模型（含枚举、关系、级联删除）
+  - 编写 main.py 入口（lifespan init_db + CORS + 路由注册）
+  - 编写空白路由文件（works/bangumi/profiles/tags）
+  - 验证：4 张表全部正确创建、uvicorn 正常启动
 - **Files created/modified:**
-  -
+  - backend/requirements.txt (created)
+  - backend/run.py (created)
+  - backend/app/__init__.py (created)
+  - backend/app/config.py (created)
+  - backend/app/database.py (created)
+  - backend/app/main.py (created)
+  - backend/app/models/__init__.py (created)
+  - backend/app/models/work.py (created)
+  - backend/app/models/profile.py (created)
+  - backend/app/models/tag.py (created)
+  - backend/app/schemas/__init__.py (created)
+  - backend/app/routers/__init__.py (created)
+  - backend/app/routers/works.py (created)
+  - backend/app/routers/bangumi.py (created)
+  - backend/app/routers/profiles.py (created)
+  - backend/app/routers/tags.py (created)
 
 ## Test Results
 | Test | Input | Expected | Actual | Status |
