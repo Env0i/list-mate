@@ -145,8 +145,16 @@ class WorkListItem(BaseModel):
     updated_at: datetime
     tag_ids: list[int] = []
     is_free: bool = False
+    game_status: str = "wish"
 
     model_config = {"from_attributes": True}
+
+    @field_validator("is_free", mode="before")
+    @classmethod
+    def coerce_is_free(cls, v):
+        if v is None:
+            return False
+        return v
 
 
 class WorkResponse(WorkListItem):

@@ -2,7 +2,7 @@ import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import Response, RedirectResponse
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
 from ..models.work import Work, WorkStatus
@@ -26,7 +26,7 @@ def list_works(
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Work)
+    query = db.query(Work).options(selectinload(Work.game_profiles))
 
     if category:
         query = query.filter(Work.category == category)
@@ -56,6 +56,8 @@ def list_works(
     for w in works:
         item_data = {k: v for k, v in WorkListItem.model_validate(w).model_dump().items()}
         item_data["tag_ids"] = [wt.tag_id for wt in w.work_tags]
+        if w.category == "game" and w.game_profiles:
+            item_data["game_status"] = w.game_profiles[0].status.value if hasattr(w.game_profiles[0].status, "value") else w.game_profiles[0].status
         items.append(WorkListItem(**item_data))
 
     return PaginatedWorks(

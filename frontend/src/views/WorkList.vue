@@ -74,7 +74,7 @@ watch(activeCat, () => {
 })
 
 const workStatus = (w) => {
-  if (w.category === 'game') return w.game_profiles?.[0]?.status || 'wish'
+  if (w.category === 'game') return w.game_status || 'wish'
   return w.status || 'wish'
 }
 

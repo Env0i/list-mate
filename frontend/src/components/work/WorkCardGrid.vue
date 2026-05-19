@@ -42,12 +42,12 @@ const statusBg = {
 
 const gameStatus = computed(() => {
   if (props.work.category !== 'game') return null
-  return props.work.game_profiles?.[0]?.status
+  return props.work.game_status
 })
 
 const gpProgress = computed(() => {
   if (props.work.category !== 'game') return null
-  return props.work.game_profiles?.[0]?.progress_value
+  return props.work.game_progress_value ?? props.work.progress_value ?? null
 })
 
 const st = computed(() => {

@@ -37,6 +37,10 @@ def init_db():
     add_col("works", "priority", "INTEGER")
     add_col("works", "external_links", "VARCHAR")
     add_col("works", "bangumi_data", "VARCHAR")
+    add_col("works", "is_free", "BOOLEAN DEFAULT 0")
+    with engine.connect() as conn:
+        conn.exec_driver_sql("UPDATE works SET is_free = 0 WHERE is_free IS NULL")
+        conn.commit()
 
     # GameProfile 扩展字段
     add_col("game_profiles", "progress_type", "VARCHAR")
