@@ -19,5 +19,5 @@ class TimelineEntry(Base):
         DateTime, server_default=func.now(), nullable=False
     )
 
-    work = relationship("Work")
+    work = relationship("Work", overlaps="timeline_entries")
     game_profile = relationship("GameProfile")
