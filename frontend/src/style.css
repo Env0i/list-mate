@@ -132,3 +132,14 @@ input:focus, textarea:focus, select:focus {
   0%   { transform: translateX(-120%) skewX(-12deg); }
   100% { transform: translateX(120%) skewX(-12deg); }
 }
+
+/* ======== Mobile: Sticky top-bar (pages with back button) ======== */
+@media (max-width: 767px) {
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--bg-primary);
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+}

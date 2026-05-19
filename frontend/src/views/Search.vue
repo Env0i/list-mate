@@ -244,6 +244,7 @@ function itemId(item) {
 <style scoped>
 /* Layout */
 .page { padding: 20px 16px; }
+@media (max-width: 767px) { .page { padding-top: 0; } }
 @media (min-width: 768px) { .page { padding: 24px 32px; } }
 .page-inner { max-width: 800px; margin: 0 auto; }
 

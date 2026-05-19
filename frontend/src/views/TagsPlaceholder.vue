@@ -87,7 +87,7 @@ async function remove(id) {
   <div class="page">
     <div class="page-inner">
       <!-- Header -->
-      <div class="hd">
+      <div class="top-bar">
         <div class="hd-left">
           <h1 class="title">
             <span class="title-stamp">🏷️</span>
@@ -235,11 +235,12 @@ async function remove(id) {
   background: var(--bg-primary);
   min-height: calc(100vh - var(--topbar-height));
 }
+@media (max-width: 767px) { .page { padding-top: 0; } }
 @media (min-width: 768px) { .page { padding: 24px 32px; } }
 .page-inner { max-width: 720px; margin: 0 auto; }
 
 /* Header */
-.hd {
+.top-bar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;

@@ -31,7 +31,7 @@ async function submit() {
 <template>
   <div class="page">
     <div class="page-inner">
-      <div class="hd-row">
+      <div class="top-bar">
         <button class="back-btn" @click="router.back()">
           <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
             <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/>
@@ -79,10 +79,11 @@ async function submit() {
 
 <style scoped>
 .page { padding: 20px 16px; }
+@media (max-width: 767px) { .page { padding-top: 0; } }
 @media (min-width: 768px) { .page { padding: 24px 32px; } }
 .page-inner { max-width: 500px; margin: 0 auto; }
 
-.hd-row { margin-bottom: 20px; }
+.top-bar { margin-bottom: 20px; }
 .back-btn {
   display: inline-flex;
   align-items: center;

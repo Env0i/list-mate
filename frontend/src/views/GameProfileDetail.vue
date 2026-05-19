@@ -376,6 +376,7 @@ onMounted(load)
 <style scoped>
 /* ===== Layout ===== */
 .page { padding: 20px 16px; }
+@media (max-width: 767px) { .page { padding-top: 0; } }
 @media (min-width: 768px) { .page { padding: 24px 32px; } }
 .page-inner { max-width: 600px; margin: 0 auto; }
 .loading, .empty { text-align: center; padding: 80px 20px; color: var(--text-tertiary); }
