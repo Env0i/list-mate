@@ -1,3 +1,4 @@
+from __future__ import annotations
 import httpx
 from fastapi import APIRouter, HTTPException, Query
 from ..config import BANGUMI_API_BASE

@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 100" fill="none">
+  <defs>
+    <linearGradient id="shimmer" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="rgba(255,255,255,0)" />
+      <stop offset="45%" stop-color="rgba(255,255,255,0)" />
+      <stop offset="50%" stop-color="rgba(255,255,255,0.4)" />
+      <stop offset="55%" stop-color="rgba(255,255,255,0)" />
+      <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+    </linearGradient>
+    <filter id="card-shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="4" stdDeviation="6" flood-color="rgba(0,0,0,0.1)" />
+    </filter>
+  </defs>
+
+  <!-- Card icon -->
+  <g transform="translate(15, 10) rotate(-5)" filter="url(#card-shadow)">
+    <!-- Outer dark frame -->
+    <rect x="0" y="0" width="80" height="100" rx="8" fill="#2D2A24" />
+
+    <!-- Inner cream card -->
+    <rect x="2.5" y="2.5" width="75" height="95" rx="6" fill="#F7F5F0" />
+
+    <!-- Inner border line -->
+    <rect x="5" y="5" width="70" height="90" rx="4" fill="none" stroke="#D4CFC5" stroke-width="0.8" />
+
+    <!-- Corner decorations - top left (anime red) -->
+    <path d="M5 5 L20 5 L5 20 Z" fill="#FF1A5E" />
+
+    <!-- Corner decorations - top right (novel blue) -->
+    <path d="M75 5 L60 5 L75 20 Z" fill="#3366FF" />
+
+    <!-- Corner decorations - bottom left (comic green) -->
+    <path d="M5 95 L20 95 L5 80 Z" fill="#00CC66" />
+
+    <!-- Corner decorations - bottom right (game orange) -->
+    <path d="M75 95 L60 95 L75 80 Z" fill="#FF7A00" />
+
+    <!-- Z letter -->
+    <text x="40" y="64" font-family="'DM Sans', 'Segoe UI', sans-serif" font-size="36" font-weight="800" fill="#2D2A24" text-anchor="middle" letter-spacing="-1">Z</text>
+
+    <!-- Shimmer overlay -->
+    <rect x="2.5" y="2.5" width="75" height="95" rx="6" fill="url(#shimmer)" />
+  </g>
+
+  <!-- Brand text -->
+  <g transform="translate(112, 0)">
+    <!-- ZACE -->
+    <text x="0" y="42" font-family="'DM Sans', 'Segoe UI', sans-serif" font-size="34" font-weight="800" fill="#2D2A24" letter-spacing="4">ZACE</text>
+
+    <!-- Decorative line -->
+    <rect x="0" y="52" width="28" height="3" rx="1.5" fill="#D4CFC5" />
+
+    <!-- 集札卡册 subtitle -->
+    <text x="36" y="56" font-family="'Noto Sans SC', 'PingFang SC', sans-serif" font-size="13" font-weight="500" fill="#8A8580">集札卡册</text>
+
+    <!-- Tagline -->
+    <text x="0" y="80" font-family="'Noto Sans SC', 'PingFang SC', sans-serif" font-size="11" font-weight="400" fill="#B0ABA5">个人 ACGN 媒体收藏库</text>
+  </g>
+</svg>

@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,7 +10,7 @@ from ..schemas.tag import TagCreate, TagUpdate, TagResponse
 router = APIRouter(tags=["tags"])
 
 
-@router.get("/tags", response_model=list[TagResponse])
+@router.get("/tags", response_model=List[TagResponse])
 def list_tags(db: Session = Depends(get_db)):
     return db.query(Tag).order_by(Tag.name).all()
 

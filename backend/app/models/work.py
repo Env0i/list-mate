@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional
 import enum
 from datetime import datetime
 from sqlalchemy import Integer, String, Float, Enum, DateTime, Boolean, func
@@ -42,34 +44,34 @@ class Work(Base):
     category: Mapped[Category] = mapped_column(Enum(Category), nullable=False)
     sub_category: Mapped[str] = mapped_column(String, default="", nullable=False)
     progress_unit: Mapped[ProgressUnit] = mapped_column(Enum(ProgressUnit), nullable=False)
-    total: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    total: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # 动漫/小说/漫画的直接进度字段
-    progress_value: Mapped[float | None] = mapped_column(Float, nullable=True)
-    status: Mapped[WorkStatus | None] = mapped_column(Enum(WorkStatus), nullable=True)
-    rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    review: Mapped[str | None] = mapped_column(String, nullable=True)
+    progress_value: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    status: Mapped[Optional[WorkStatus]] = mapped_column(Enum(WorkStatus), nullable=True)
+    rating: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    review: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     auto_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     is_free: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    bangumi_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    cover_url: Mapped[str | None] = mapped_column(String, nullable=True)
-    cover_data: Mapped[bytes | None] = mapped_column(nullable=True)
+    bangumi_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    cover_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    cover_data: Mapped[Optional[bytes]] = mapped_column(nullable=True)
     cover_source: Mapped[CoverSource] = mapped_column(
         Enum(CoverSource), default=CoverSource.MANUAL, nullable=False
     )
-    summary: Mapped[str | None] = mapped_column(String, nullable=True)
-    start_date: Mapped[str | None] = mapped_column(String, nullable=True)
-    finish_date: Mapped[str | None] = mapped_column(String, nullable=True)
-    platform: Mapped[str | None] = mapped_column(String, nullable=True)
-    purchase_platform: Mapped[str | None] = mapped_column(String, nullable=True)
-    purchase_date: Mapped[str | None] = mapped_column(String, nullable=True)
-    purchase_price: Mapped[float | None] = mapped_column(Float, nullable=True)
-    playtime_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
-    replay_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    priority: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    external_links: Mapped[str | None] = mapped_column(String, nullable=True)
-    bangumi_data: Mapped[str | None] = mapped_column(String, nullable=True)
+    summary: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    start_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    finish_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    platform: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    purchase_platform: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    purchase_date: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    purchase_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    playtime_hours: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    replay_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    priority: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    external_links: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    bangumi_data: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )

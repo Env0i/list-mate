@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
@@ -40,7 +42,7 @@ def upload_attachment(
     )
 
 
-@router.get("/game-profiles/{gpid}/attachments", response_model=list[AttachmentResponse])
+@router.get("/game-profiles/{gpid}/attachments", response_model=List[AttachmentResponse])
 def list_attachments(gpid: int, db: Session = Depends(get_db)):
     gp = db.query(GameProfile).get(gpid)
     if not gp:

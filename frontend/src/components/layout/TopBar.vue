@@ -14,13 +14,9 @@ const items = [
 <template>
   <header class="topbar">
     <div class="inner">
-      <div class="brand">
-        <svg viewBox="0 0 28 28" fill="none" width="20" height="20">
-          <rect width="28" height="28" rx="7" fill="currentColor" fill-opacity="0.15"/>
-          <path d="M14 7v14M7 14h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-        </svg>
-        <span class="brand-t">list-mate</span>
-      </div>
+      <a href="/" class="brand">
+        <img src="/logo.svg" alt="Zace" class="brand-logo" width="140" height="41" />
+      </a>
       <nav class="nav">
         <router-link v-for="item in items" :key="item.path" :to="item.path" class="ni" :class="{ on: route.path === item.path }">
           <svg viewBox="0 0 1024 1024" fill="currentColor" class="ni-i">
@@ -79,15 +75,16 @@ const items = [
 .brand {
   display: flex;
   align-items: center;
-  gap: 9px;
-  color: var(--primary);
   flex-shrink: 0;
+  text-decoration: none;
+  opacity: 1;
+  transition: opacity 0.15s;
 }
-.brand-t {
-  font-size: var(--fs-lg);
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  color: var(--text-primary);
+.brand:hover { opacity: 0.8; }
+.brand-logo {
+  display: block;
+  height: 30px;
+  width: auto;
 }
 
 .nav {
