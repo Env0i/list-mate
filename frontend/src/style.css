@@ -142,4 +142,6 @@ input:focus, textarea:focus, select:focus {
     background: var(--bg-primary);
     border-bottom: 1px solid rgba(0,0,0,0.04);
   }
+  /* 为底部导航栏留出空间 */
+  .page { padding-bottom: 72px; }
 }

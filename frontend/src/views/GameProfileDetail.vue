@@ -440,6 +440,13 @@ onMounted(load)
   position: relative;
 }
 @media (max-width: 639px) { .detail-card { padding: 20px; } }
+@media (max-width: 480px) {
+  .record-grid { grid-template-columns: 1fr; }
+  .top-bar { flex-wrap: wrap; gap: 8px; }
+  .back-btn, .act-btn { padding: 8px 12px; font-size: var(--fs-xs); }
+  .st-opt { height: 28px; padding: 0 12px; font-size: 11px; }
+  .pt-opt { height: 28px; padding: 0 12px; font-size: 11px; }
+}
 
 /* Sections */
 .section { margin-bottom: 28px; }

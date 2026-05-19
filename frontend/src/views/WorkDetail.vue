@@ -1094,9 +1094,15 @@ onMounted(load)
 .gp-empty { text-align: center; padding: 32px 20px; color: var(--text-tertiary); font-size: var(--fs-sm); }
 
 @media (max-width: 767px) {
-  .gp-bar { flex-wrap: wrap; gap: 8px; }
+  .gp-bar { flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+  .gp-name { font-size: var(--fs-sm); min-width: 50px; }
+  .gp-st { font-size: 9px; padding: 1px 6px; }
   .gp-prog { min-width: 100%; order: 3; }
   .gp-rating { margin-left: auto; }
+}
+@media (max-width: 480px) {
+  .top-bar { flex-wrap: wrap; gap: 8px; }
+  .back-btn, .act-btn { padding: 8px 12px; font-size: var(--fs-xs); }
 }
 
 /* ===== Edit Modal — collector's spec sheet ===== */
@@ -1194,6 +1200,12 @@ onMounted(load)
 }
 @media (max-width: 700px) {
   .modal-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .modal-body { padding: 16px; }
+  .modal-hd { flex-wrap: wrap; gap: 12px; }
+  .modal-ft { padding: 14px 16px 20px; }
+  .modal-cancel, .modal-save { flex: 1; justify-content: center; display: flex; }
 }
 .modal-col { display: flex; flex-direction: column; gap: 20px; }
 

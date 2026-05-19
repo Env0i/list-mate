@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from ..database import get_db
 from ..models.work import Work, WorkStatus
-from ..models.game_profile import GameProfile
+from ..models.game_profile import GameProfile, GameStatus
 from ..models.tag import Tag, WorkTag
 from ..schemas.work import WorkCreate, WorkUpdate, WorkResponse, WorkListItem, PaginatedWorks
 from .timeline import record_timeline
