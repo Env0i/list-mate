@@ -132,7 +132,7 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
     if is_game:
         gp = GameProfile(work_id=work.id, name="本体", sort_order=0)
         if game_status:
-            gp.status = game_status
+            gp.status = GameStatus(game_status)
         db.add(gp)
 
     # Tag associations
@@ -167,7 +167,10 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
 
     # 游戏作品的状态只存在 GameProfile 上
     if work.category == "game" and "status" in update_data:
-        del update_data["status"]
+        status_val = update_data.pop("status")
+        gp = db.query(GameProfile).filter(GameProfile.work_id == work.id).order_by(GameProfile.sort_order, GameProfile.id).first()
+        if gp:
+            gp.status = GameStatus(status_val)
 
     if "cover_url" in update_data and update_data["cover_url"] != work.cover_url:
         try:

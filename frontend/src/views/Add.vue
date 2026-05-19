@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { worksApi } from '../api/client'
+import PlatformSelector from '../components/work/PlatformSelector.vue'
 
 const router = useRouter()
 const form = ref({
@@ -22,6 +23,7 @@ const form = ref({
   purchase_price: null,
   playtime_hours: null,
   replay_count: null,
+  is_free: false,
   rating: null,
   review: '',
 })
@@ -149,7 +151,7 @@ async function submit() {
             <div class="f-row">
               <label class="field f-sm">
                 <span>平台</span>
-                <input v-model="form.platform" placeholder="Bilibili / Netflix / Steam..." />
+                <PlatformSelector :category="form.category" v-model="form.platform" />
               </label>
               <label class="field f-xs">
                 <span>优先度 (0-5)</span>
@@ -167,10 +169,18 @@ async function submit() {
         <div class="section" v-if="form.category === 'game'">
           <h3 class="section-title">游戏专属</h3>
           <div class="fields">
-            <div class="f-row">
+            <label class="field toggle-field">
+              <span class="toggle-row">
+                <span>免费获取</span>
+                <input type="checkbox" v-model="form.is_free" class="toggle" />
+              </span>
+              <span class="toggle-hint">免费游戏或平台赠送，不记录价格</span>
+            </label>
+
+            <div class="f-row" v-if="!form.is_free">
               <label class="field f-sm">
-                <span>购买平台</span>
-                <input v-model="form.purchase_platform" placeholder="Steam / PS5 / 实体..." />
+                <span>购买价格</span>
+                <input v-model.number="form.purchase_price" type="number" min="0" step="0.01" placeholder="0" />
               </label>
               <label class="field f-sm">
                 <span>购买时间</span>
@@ -179,18 +189,14 @@ async function submit() {
             </div>
             <div class="f-row">
               <label class="field f-sm">
-                <span>购买价格</span>
-                <input v-model.number="form.purchase_price" type="number" min="0" step="0.01" placeholder="0" />
-              </label>
-              <label class="field f-sm">
                 <span>游戏时长（小时）</span>
                 <input v-model.number="form.playtime_hours" type="number" min="0" step="0.1" placeholder="0" />
               </label>
+              <label class="field f-sm">
+                <span>重刷次数</span>
+                <input v-model.number="form.replay_count" type="number" min="0" placeholder="0" />
+              </label>
             </div>
-            <label class="field f-xs">
-              <span>重刷次数</span>
-              <input v-model.number="form.replay_count" type="number" min="0" placeholder="0" />
-            </label>
           </div>
         </div>
 
@@ -323,6 +329,39 @@ async function submit() {
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
+
+/* Toggle */
+.toggle-field { gap: 0; }
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.toggle {
+  width: 40px;
+  height: 22px;
+  appearance: none;
+  border-radius: 11px;
+  background: var(--color-border);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+}
+.toggle:checked { background: var(--primary); }
+.toggle:checked::after { transform: translateX(18px); }
+.toggle-hint { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
 
 .err { color: var(--c-anime); font-size: var(--fs-sm); margin-bottom: 12px; }
 

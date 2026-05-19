@@ -50,6 +50,7 @@ class Work(Base):
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     review: Mapped[str | None] = mapped_column(String, nullable=True)
     auto_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_free: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     bangumi_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     cover_url: Mapped[str | None] = mapped_column(String, nullable=True)

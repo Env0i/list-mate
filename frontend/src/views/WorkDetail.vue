@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { worksApi, tagsApi, coverApi } from '../api/client'
 import CategoryBadge from '../components/work/CategoryBadge.vue'
 import ProgressBar from '../components/work/ProgressBar.vue'
+import PlatformSelector from '../components/work/PlatformSelector.vue'
+import { getPlatformIconUrl } from '../utils/platformIcons'
 
 const route = useRoute()
 const router = useRouter()
@@ -127,6 +129,10 @@ async function uploadCover(e) {
 
 async function openEdit() {
   form.value = { ...work.value }
+  // 游戏作品的状态存在 GameProfile 上
+  if (work.value.category === 'game' && work.value.game_profiles?.length) {
+    form.value.status = work.value.game_profiles[0].status
+  }
   selectedTagIds.value = (work.value.tags || []).map(t => t.id)
   showEditModal.value = true
   tagLoading.value = true
@@ -153,6 +159,10 @@ async function saveEdit() {
     const payload = { ...form.value, tag_ids: selectedTagIds.value }
     await worksApi.update(route.params.id, payload)
     work.value = { ...work.value, ...form.value }
+    // 游戏作品状态在 GameProfile 上，同步到本地显示
+    if (work.value.category === 'game' && work.value.game_profiles?.length) {
+      work.value.game_profiles[0].status = form.value.status
+    }
     // Update local tags from allTags
     work.value.tags = allTags.value.filter(t => selectedTagIds.value.includes(t.id))
     showEditModal.value = false
@@ -341,25 +351,35 @@ onMounted(load)
           </div>
           <div class="tk-item" v-if="work.platform">
             <span class="tk-l">平台</span>
-            <span class="tk-v">{{ work.platform }}</span>
+            <span class="tk-v">
+              <img
+                v-if="getPlatformIconUrl(work.category, work.platform)"
+                :src="getPlatformIconUrl(work.category, work.platform)"
+                class="tk-icon"
+                @error="e => e.target.style.display = 'none'"
+              />
+              {{ work.platform }}
+            </span>
           </div>
           <div class="tk-item" v-if="work.priority != null">
             <span class="tk-l">优先度</span>
             <span class="tk-v">⭐ {{ work.priority }}</span>
           </div>
           <template v-if="work.category === 'game'">
-            <div class="tk-item" v-if="work.purchase_platform">
-              <span class="tk-l">购买平台</span>
-              <span class="tk-v">{{ work.purchase_platform }}</span>
+            <div class="tk-item" v-if="work.is_free && work.platform">
+              <span class="tk-l">获取方式</span>
+              <span class="tk-v"><span class="free-badge">免费获取</span></span>
             </div>
-            <div class="tk-item" v-if="work.purchase_date">
-              <span class="tk-l">购买时间</span>
-              <span class="tk-v">{{ work.purchase_date }}</span>
-            </div>
-            <div class="tk-item" v-if="work.purchase_price != null">
-              <span class="tk-l">购买价格</span>
-              <span class="tk-v">{{ work.purchase_price }} 元</span>
-            </div>
+            <template v-if="!work.is_free">
+              <div class="tk-item" v-if="work.purchase_date">
+                <span class="tk-l">购买时间</span>
+                <span class="tk-v">{{ work.purchase_date }}</span>
+              </div>
+              <div class="tk-item" v-if="work.purchase_price != null">
+                <span class="tk-l">购买价格</span>
+                <span class="tk-v">{{ work.purchase_price }} 元</span>
+              </div>
+            </template>
             <div class="tk-item" v-if="work.playtime_hours != null">
               <span class="tk-l">游戏时长</span>
               <span class="tk-v">{{ work.playtime_hours }} 小时</span>
@@ -441,13 +461,38 @@ onMounted(load)
       </div>
     </div>
 
-    <!-- Edit Modal -->
+    <!-- Edit Modal — collector's spec sheet -->
     <Teleport to="body">
       <Transition name="modal">
         <div v-if="showEditModal" class="modal-overlay" @click.self="closeEdit">
-          <div class="modal-card" @click.stop>
+          <div
+            class="modal-card"
+            :style="{ '--modal-accent': `var(--c-${work?.category || 'anime'})` }"
+            @click.stop
+          >
+            <!-- Header with cover thumb -->
             <div class="modal-hd">
-              <h2>编辑作品</h2>
+              <div class="modal-hd-left">
+                <div
+                  class="modal-thumb"
+                  :style="{
+                    background: work?.cover_url
+                      ? `url(${worksApi.coverUrl(work?.id)}) center/cover no-repeat`
+                      : 'var(--modal-accent)'
+                  }"
+                >
+                  <div v-if="!work?.cover_url" class="modal-thumb-none">
+                    <svg viewBox="0 0 20 20" fill="none" width="14" height="14">
+                      <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="0.5" opacity="0.4"/>
+                      <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="0.8" opacity="0.3"/>
+                    </svg>
+                  </div>
+                </div>
+                <div class="modal-hd-text">
+                  <h2>编辑作品</h2>
+                  <span class="modal-hd-cat">{{ work?.title || '' }}</span>
+                </div>
+              </div>
               <button class="modal-close" @click="closeEdit">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
                   <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
@@ -456,135 +501,156 @@ onMounted(load)
             </div>
 
             <div class="modal-body">
-              <!-- Section 1: 基本信息 -->
-              <div class="modal-section">
-                <h3 class="modal-section-title">基本信息</h3>
-                <div class="modal-fields">
-                  <label class="mf-label">
-                    <span>标题</span>
-                    <input v-model="form.title" placeholder="作品名称" />
-                  </label>
-                  <div class="mf-row">
-                    <label class="mf-label mf-sm">
-                      <span>子分类</span>
-                      <input v-model="form.sub_category" placeholder="如：单机、欧美剧" />
-                    </label>
-                    <label class="mf-label mf-xs" v-if="work.category !== 'game'">
-                      <span>总量</span>
-                      <input v-model.number="form.total" type="number" min="0" placeholder="0" />
-                    </label>
+              <div class="modal-grid">
+                <!-- Left column -->
+                <div class="modal-col">
+                  <!-- Section 1: 基本信息 -->
+                  <div class="modal-section">
+                    <h3 class="modal-section-title">基本信息</h3>
+                    <div class="modal-fields">
+                      <label class="mf-label">
+                        <span>标题</span>
+                        <input v-model="form.title" placeholder="作品名称" />
+                      </label>
+                      <div class="mf-row">
+                        <label class="mf-label mf-sm">
+                          <span>子分类</span>
+                          <input v-model="form.sub_category" placeholder="如：单机、欧美剧" />
+                        </label>
+                        <label class="mf-label mf-xs" v-if="work?.category !== 'game'">
+                          <span>总量</span>
+                          <input v-model.number="form.total" type="number" min="0" placeholder="0" />
+                        </label>
+                      </div>
+                      <div class="mf-row">
+                        <label class="mf-label mf-sm">
+                          <span>状态</span>
+                          <select v-model="form.status">
+                            <option value="">—</option>
+                            <option v-for="(label, key) in statusLabels[work?.category]" :key="key" :value="key">{{ label }}</option>
+                          </select>
+                        </label>
+                        <label class="mf-label mf-xs" v-if="work?.category !== 'game'">
+                          <span>进度</span>
+                          <input v-model.number="form.progress_value" type="number" min="0" placeholder="0" />
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                  <div class="mf-row">
-                    <label class="mf-label mf-sm">
-                      <span>状态</span>
-                      <select v-model="form.status">
-                        <option value="">—</option>
-                        <option v-for="(label, key) in statusLabels[work.category]" :key="key" :value="key">{{ label }}</option>
-                      </select>
-                    </label>
-                    <label class="mf-label mf-xs" v-if="work.category !== 'game'">
-                      <span>进度</span>
-                      <input v-model.number="form.progress_value" type="number" min="0" placeholder="0" />
-                    </label>
-                  </div>
-                  <label class="mf-label">
-                    <span>简介</span>
-                    <textarea v-model="form.summary" rows="3" placeholder="作品简介..." />
-                  </label>
-                </div>
-              </div>
 
-              <!-- Tags -->
-              <div class="modal-section">
-                <h3 class="modal-section-title">标签</h3>
-                <div v-if="tagLoading" class="tag-loading">加载标签中...</div>
-                <div v-else-if="allTags.length" class="tag-chips">
-                  <button
-                    v-for="t in allTags"
-                    :key="t.id"
-                    class="tchip"
-                    :class="{ on: selectedTagIds.includes(t.id) }"
-                    :style="selectedTagIds.includes(t.id) ? { background: t.color, color: '#fff', borderColor: t.color } : { color: t.color, borderColor: t.color + '40' }"
-                    @click="toggleTag(t.id)"
-                  >{{ t.name }}</button>
-                </div>
-                <p v-else class="tag-none">暂无标签，前往 <router-link to="/tags" class="tag-link">标签管理</router-link> 创建</p>
-              </div>
+                  <!-- Section 2: 追踪信息 -->
+                  <div class="modal-section">
+                    <h3 class="modal-section-title">追踪信息</h3>
+                    <div class="modal-fields">
+                      <div class="mf-row">
+                        <label class="mf-label mf-sm">
+                          <span>开始时间</span>
+                          <input v-model="form.start_date" type="date" />
+                        </label>
+                        <label class="mf-label mf-sm">
+                          <span>完成时间</span>
+                          <input v-model="form.finish_date" type="date" />
+                        </label>
+                      </div>
+                      <label class="mf-label">
+                        <span>平台</span>
+                        <PlatformSelector :category="work?.category" v-model="form.platform" />
+                      </label>
+                      <div class="mf-row">
+                        <label class="mf-label mf-xs">
+                          <span>优先度</span>
+                          <input v-model.number="form.priority" type="number" min="0" max="5" placeholder="0-5" />
+                        </label>
+                        <label class="mf-label mf-xs" v-if="work?.category !== 'game'">
+                          <span>重刷次数</span>
+                          <input v-model.number="form.replay_count" type="number" min="0" placeholder="0" />
+                        </label>
+                      </div>
+                      <label class="mf-label">
+                        <span>外部链接</span>
+                        <input v-model="form.external_links" placeholder='{"steam":"https://..."}' />
+                      </label>
+                    </div>
+                  </div>
 
-              <!-- Section 2: 追踪信息 -->
-              <div class="modal-section">
-                <h3 class="modal-section-title">追踪信息</h3>
-                <div class="modal-fields">
-                  <div class="mf-row">
-                    <label class="mf-label mf-sm">
-                      <span>开始时间</span>
-                      <input v-model="form.start_date" type="date" />
-                    </label>
-                    <label class="mf-label mf-sm">
-                      <span>完成时间</span>
-                      <input v-model="form.finish_date" type="date" />
-                    </label>
+                  <!-- Section 3: 游戏专属 -->
+                  <div class="modal-section" v-if="work?.category === 'game'">
+                    <div class="modal-section-row">
+                      <h3 class="modal-section-title">游戏专属</h3>
+                      <label class="free-toggle">
+                        <span>{{ form.is_free ? '免费' : '付费' }}</span>
+                        <input type="checkbox" v-model="form.is_free" />
+                      </label>
+                    </div>
+                    <div class="modal-fields">
+                      <div class="mf-row" v-if="!form.is_free">
+                        <label class="mf-label mf-sm">
+                          <span>购买价格</span>
+                          <input v-model.number="form.purchase_price" type="number" min="0" step="0.01" placeholder="0" />
+                        </label>
+                        <label class="mf-label mf-sm">
+                          <span>购买时间</span>
+                          <input v-model="form.purchase_date" type="date" />
+                        </label>
+                      </div>
+                      <div class="mf-row">
+                        <label class="mf-label mf-sm">
+                          <span>游戏时长（小时）</span>
+                          <input v-model.number="form.playtime_hours" type="number" min="0" step="0.1" placeholder="0" />
+                        </label>
+                        <label class="mf-label mf-sm">
+                          <span>重刷次数</span>
+                          <input v-model.number="form.replay_count" type="number" min="0" placeholder="0" />
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                  <div class="mf-row">
-                    <label class="mf-label mf-sm">
-                      <span>平台</span>
-                      <input v-model="form.platform" placeholder="Bilibili / Netflix / Steam..." />
-                    </label>
-                    <label class="mf-label mf-xs">
-                      <span>优先度</span>
-                      <input v-model.number="form.priority" type="number" min="0" max="5" placeholder="0-5" />
-                    </label>
-                  </div>
-                  <label class="mf-label">
-                    <span>外部链接</span>
-                    <input v-model="form.external_links" placeholder='{"steam":"https://..."}' />
-                  </label>
                 </div>
-              </div>
 
-              <!-- Section 3: 游戏专属 -->
-              <div class="modal-section" v-if="work.category === 'game'">
-                <h3 class="modal-section-title">游戏专属</h3>
-                <div class="modal-fields">
-                  <div class="mf-row">
-                    <label class="mf-label mf-sm">
-                      <span>购买平台</span>
-                      <input v-model="form.purchase_platform" placeholder="Steam / PS5 / 实体..." />
-                    </label>
-                    <label class="mf-label mf-sm">
-                      <span>购买时间</span>
-                      <input v-model="form.purchase_date" type="date" />
-                    </label>
+                <!-- Right column -->
+                <div class="modal-col">
+                  <!-- Tags -->
+                  <div class="modal-section">
+                    <h3 class="modal-section-title">标签</h3>
+                    <div v-if="tagLoading" class="tag-loading">加载标签中...</div>
+                    <div v-else-if="allTags.length" class="tag-chips">
+                      <button
+                        v-for="t in allTags"
+                        :key="t.id"
+                        class="tchip"
+                        :class="{ on: selectedTagIds.includes(t.id) }"
+                        :style="selectedTagIds.includes(t.id) ? { background: t.color, color: '#fff', borderColor: t.color } : { color: t.color, borderColor: t.color + '40' }"
+                        @click="toggleTag(t.id)"
+                      >{{ t.name }}</button>
+                    </div>
+                    <p v-else class="tag-none">暂无标签，前往 <router-link to="/tags" class="tag-link">标签管理</router-link> 创建</p>
                   </div>
-                  <div class="mf-row">
-                    <label class="mf-label mf-sm">
-                      <span>购买价格</span>
-                      <input v-model.number="form.purchase_price" type="number" min="0" step="0.01" placeholder="0" />
-                    </label>
-                    <label class="mf-label mf-sm">
-                      <span>游戏时长（小时）</span>
-                      <input v-model.number="form.playtime_hours" type="number" min="0" step="0.1" placeholder="0" />
-                    </label>
-                  </div>
-                  <label class="mf-label mf-xs">
-                    <span>重刷次数</span>
-                    <input v-model.number="form.replay_count" type="number" min="0" placeholder="0" />
-                  </label>
-                </div>
-              </div>
 
-              <!-- Section 4: 评分评价 -->
-              <div class="modal-section">
-                <h3 class="modal-section-title">评分评价</h3>
-                <div class="modal-fields">
-                  <label class="mf-label">
-                    <span>评分 {{ form.rating != null ? form.rating + '/10' : '—' }}</span>
-                    <input v-model.number="form.rating" type="range" min="0" max="10" class="rating-slider" />
-                  </label>
-                  <label class="mf-label">
-                    <span>评价</span>
-                    <textarea v-model="form.review" rows="3" placeholder="写下你的评价..." />
-                  </label>
+                  <!-- Rating -->
+                  <div class="modal-section">
+                    <h3 class="modal-section-title">评分评价</h3>
+                    <div class="modal-fields">
+                      <label class="mf-label">
+                        <span>评分 {{ form.rating != null ? form.rating + '/10' : '—' }}</span>
+                        <input v-model.number="form.rating" type="range" min="0" max="10" class="rating-slider" />
+                      </label>
+                      <label class="mf-label">
+                        <span>评价</span>
+                        <textarea v-model="form.review" rows="3" placeholder="写下你的评价..." />
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Summary -->
+                  <div class="modal-section">
+                    <h3 class="modal-section-title">简介</h3>
+                    <textarea
+                      v-model="form.summary"
+                      class="modal-summary-ta"
+                      rows="4"
+                      placeholder="作品简介..."
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -592,7 +658,7 @@ onMounted(load)
             <div class="modal-ft">
               <button class="modal-cancel" @click="closeEdit">取消</button>
               <button class="modal-save" @click="saveEdit" :disabled="saving">
-                {{ saving ? '保存中...' : '保存' }}
+                {{ saving ? '保存中...' : '保存修改' }}
               </button>
             </div>
           </div>
@@ -893,6 +959,18 @@ onMounted(load)
   letter-spacing: 0.5px;
 }
 .tk-v { font-size: var(--fs-sm); color: var(--text-secondary); word-break: break-all; }
+.tk-v .tk-icon { width: 20px; height: 20px; vertical-align: middle; margin-right: 4px; }
+.free-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--c-game) 15%, transparent);
+  color: var(--c-game);
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: middle;
+  margin-left: 4px;
+}
 
 .tk-divider {
   height: 1px;
@@ -1020,34 +1098,79 @@ onMounted(load)
   .gp-rating { margin-left: auto; }
 }
 
-/* ===== Edit Modal ===== */
+/* ===== Edit Modal — collector's spec sheet ===== */
 .modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  background: rgba(0,0,0,0.3);
-  backdrop-filter: blur(4px);
-  padding: 16px;
+  background: rgba(26, 24, 22, 0.35);
+  backdrop-filter: blur(6px);
+  padding: 40px 16px;
+  overflow-y: auto;
 }
 .modal-card {
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 640px;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-lg);
+  max-width: 780px;
+  margin-top: 20px;
+  box-shadow:
+    0 0 0 1px var(--frame-outer-line),
+    0 0 0 2px rgba(255,255,255,0.5),
+    0 20px 60px rgba(0,0,0,0.12);
+  position: relative;
+  overflow: hidden;
 }
+/* Category accent top bar */
+.modal-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--modal-accent);
+}
+
+/* Header */
 .modal-hd {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 0;
 }
-.modal-hd h2 { font-size: var(--fs-xl); font-weight: 800; }
+.modal-hd-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.modal-thumb {
+  width: 40px;
+  height: 52px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 0 0 1.5px var(--modal-accent),
+    0 0 0 4px rgba(255,255,255,0.6),
+    0 0 0 5px var(--frame-outer-line);
+}
+.modal-thumb-none { opacity: 0.5; color: white; }
+.modal-hd-text { min-width: 0; }
+.modal-hd-text h2 { font-size: var(--fs-xl); font-weight: 800; }
+.modal-hd-cat {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
 .modal-close {
   width: 32px; height: 32px;
   display: flex;
@@ -1055,27 +1178,50 @@ onMounted(load)
   justify-content: center;
   border-radius: var(--radius-full);
   color: var(--text-tertiary);
+  flex-shrink: 0;
   transition: all 0.15s;
 }
 .modal-close:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
-.modal-body { padding: 16px 24px 8px; }
-.modal-section { margin-bottom: 20px; }
+
+/* Body — 2-column grid */
+.modal-body { padding: 20px 24px 8px; }
+.modal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 28px;
+  align-items: start;
+}
+@media (max-width: 700px) {
+  .modal-grid { grid-template-columns: 1fr; }
+}
+.modal-col { display: flex; flex-direction: column; gap: 20px; }
+
+/* Section */
+.modal-section { }
 .modal-section-title {
-  font-size: var(--fs-xs);
+  font-size: 10px;
   font-weight: 700;
-  color: var(--text-tertiary);
+  color: var(--modal-accent);
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 1px;
   margin-bottom: 10px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--color-border);
 }
+.modal-section-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 .modal-fields { display: flex; flex-direction: column; gap: 10px; }
+
+/* Labels / Controls */
 .mf-label { display: flex; flex-direction: column; gap: 4px; }
-.mf-label span {
-  font-size: var(--fs-xs);
+.mf-label > span {
+  font-size: 10px;
   font-weight: 600;
   color: var(--text-tertiary);
+  letter-spacing: 0.3px;
 }
 .mf-label input, .mf-label select, .mf-label textarea {
   padding: 8px 12px;
@@ -1083,7 +1229,7 @@ onMounted(load)
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background: var(--bg-primary);
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 .mf-label input:focus, .mf-label select:focus, .mf-label textarea:focus {
   border-color: var(--text-tertiary);
@@ -1093,6 +1239,57 @@ onMounted(load)
 .mf-row { display: flex; gap: 10px; }
 .mf-sm { flex: 1; }
 .mf-xs { width: 100px; flex-shrink: 0; }
+
+/* Free toggle pill */
+.free-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px 0 12px;
+  border-radius: var(--radius-full);
+  background: var(--bg-primary);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  user-select: none;
+}
+.free-toggle:has(input:checked) {
+  background: color-mix(in srgb, var(--c-game) 12%, transparent);
+  border-color: color-mix(in srgb, var(--c-game) 30%, transparent);
+  color: var(--c-game);
+}
+.free-toggle input {
+  appearance: none;
+  width: 30px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--color-border);
+  position: relative;
+  transition: background 0.2s;
+  cursor: pointer;
+}
+.free-toggle input::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.free-toggle input:checked {
+  background: var(--c-game);
+}
+.free-toggle input:checked::after {
+  transform: translateX(12px);
+}
+
+/* Rating slider */
 .rating-slider {
   height: 6px;
   -webkit-appearance: none;
@@ -1110,12 +1307,33 @@ onMounted(load)
   cursor: pointer;
   box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
+
+/* Summary textarea (standalone in right column) */
+.modal-summary-ta {
+  padding: 8px 12px;
+  font-size: var(--fs-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--bg-primary);
+  width: 100%;
+  resize: vertical;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.modal-summary-ta:focus {
+  border-color: var(--text-tertiary);
+  background: var(--bg-surface);
+  outline: none;
+}
+
+/* Footer */
 .modal-ft {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   padding: 16px 24px 24px;
   border-top: 1px solid var(--color-border);
+  margin-top: 4px;
 }
 .modal-cancel {
   height: 36px;
@@ -1145,11 +1363,11 @@ onMounted(load)
   transition: opacity 0.2s ease;
 }
 .modal-enter-active .modal-card, .modal-leave-active .modal-card {
-  transition: transform 0.2s cubic-bezier(.2,0,0,1);
+  transition: transform 0.25s cubic-bezier(.2,0,0,1);
 }
 .modal-enter-from, .modal-leave-to { opacity: 0; }
-.modal-enter-from .modal-card { transform: scale(0.95) translateY(10px); }
-.modal-leave-to .modal-card { transform: scale(0.95) translateY(10px); }
+.modal-enter-from .modal-card { transform: scale(0.96) translateY(12px); }
+.modal-leave-to .modal-card { transform: scale(0.96) translateY(12px); }
 
 /* Personal tags in info card */
 .ptags-row {

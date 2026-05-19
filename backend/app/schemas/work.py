@@ -33,6 +33,7 @@ class WorkCreate(BaseModel):
     external_links: Optional[str] = None
     bangumi_data: Optional[str] = None
     tag_ids: list[int] = []
+    is_free: bool = False
 
     @field_validator("category")
     @classmethod
@@ -86,6 +87,7 @@ class WorkUpdate(BaseModel):
     priority: Optional[int] = None
     external_links: Optional[str] = None
     tag_ids: Optional[list[int]] = None
+    is_free: Optional[bool] = None
 
     @field_validator("category")
     @classmethod
@@ -142,6 +144,7 @@ class WorkListItem(BaseModel):
     created_at: datetime
     updated_at: datetime
     tag_ids: list[int] = []
+    is_free: bool = False
 
     model_config = {"from_attributes": True}
 
