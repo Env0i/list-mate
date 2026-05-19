@@ -123,11 +123,11 @@ def setup_server(client):
     print("=" * 50)
     print("5/6  服务器安装依赖...")
 
-    # 创建 venv（如果没有），用 python3 确保兼容
+    # 创建 venv（如果没有），用 python3.8 确保兼容
     cmd = f"""
     if [ ! -d "{REMOTE_VENV}" ]; then
-        python3 -m venv {REMOTE_VENV}
-        echo "  venv created with python3"
+        python3.8 -m venv {REMOTE_VENV}
+        echo "  venv created with python3.8"
     else
         echo "  venv already exists"
     fi

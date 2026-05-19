@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -10,7 +12,7 @@ from ..utils import record_timeline
 router = APIRouter(tags=["game-profiles"])
 
 
-@router.get("/works/{work_id}/game-profiles", response_model=list[GameProfileResponse])
+@router.get("/works/{work_id}/game-profiles", response_model=List[GameProfileResponse])
 def list_game_profiles(work_id: int, db: Session = Depends(get_db)):
     work = db.query(Work).get(work_id)
     if not work:
