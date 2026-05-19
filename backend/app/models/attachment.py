@@ -17,4 +17,4 @@ class Attachment(Base):
         DateTime, server_default=func.now(), nullable=False
     )
 
-    game_profile = relationship("GameProfile")
+    game_profile = relationship("GameProfile", back_populates="attachments")

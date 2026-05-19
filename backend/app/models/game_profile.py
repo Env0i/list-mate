@@ -51,3 +51,4 @@ class GameProfile(Base):
     )
 
     work = relationship("Work", back_populates="game_profiles")
+    attachments = relationship("Attachment", back_populates="game_profile", cascade="all, delete-orphan")

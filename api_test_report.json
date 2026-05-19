@@ -1,5 +1,5 @@
 {
-  "pass": 80,
+  "pass": 100,
   "fail": 0,
   "tests": [
     {
@@ -50,7 +50,7 @@
     {
       "name": "Update tag",
       "method": "PUT",
-      "path": "/tags/22",
+      "path": "/tags/26",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -113,7 +113,7 @@
     {
       "name": "Get work detail",
       "method": "GET",
-      "path": "/works/42",
+      "path": "/works/7",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -122,7 +122,7 @@
     {
       "name": "Update work",
       "method": "PUT",
-      "path": "/works/42",
+      "path": "/works/7",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -131,7 +131,7 @@
     {
       "name": "Verify update",
       "method": "GET",
-      "path": "/works/42",
+      "path": "/works/7",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -140,7 +140,7 @@
     {
       "name": "Upload cover",
       "method": "POST",
-      "path": "/works/42/cover",
+      "path": "/works/7/cover",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -149,7 +149,7 @@
     {
       "name": "Get cover",
       "method": "GET",
-      "path": "/works/42/cover",
+      "path": "/works/7/cover",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -239,7 +239,7 @@
     {
       "name": "Create GameProfile",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -248,7 +248,7 @@
     {
       "name": "Get GameProfile",
       "method": "GET",
-      "path": "/game-profiles/21",
+      "path": "/game-profiles/7",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -257,7 +257,7 @@
     {
       "name": "Update GameProfile",
       "method": "PUT",
-      "path": "/game-profiles/21",
+      "path": "/game-profiles/7",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -266,7 +266,7 @@
     {
       "name": "GP on non-game work",
       "method": "POST",
-      "path": "/works/42/game-profiles",
+      "path": "/works/7/game-profiles",
       "status_code": 400,
       "expected": 400,
       "status": "PASS",
@@ -356,7 +356,7 @@
     {
       "name": "List attachments",
       "method": "GET",
-      "path": "/game-profiles/21/attachments",
+      "path": "/game-profiles/7/attachments",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -365,7 +365,7 @@
     {
       "name": "Upload attachment",
       "method": "POST",
-      "path": "/game-profiles/21/attachments",
+      "path": "/game-profiles/7/attachments",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -374,7 +374,7 @@
     {
       "name": "Upload attachment #2",
       "method": "POST",
-      "path": "/game-profiles/21/attachments",
+      "path": "/game-profiles/7/attachments",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -383,7 +383,7 @@
     {
       "name": "List attachments",
       "method": "GET",
-      "path": "/game-profiles/21/attachments",
+      "path": "/game-profiles/7/attachments",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -392,7 +392,7 @@
     {
       "name": "Download attachment",
       "method": "GET",
-      "path": "/attachments/13",
+      "path": "/attachments/2",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -473,7 +473,7 @@
     {
       "name": "Auto-complete: progress = total",
       "method": "PUT",
-      "path": "/works/46",
+      "path": "/works/11",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -482,7 +482,7 @@
     {
       "name": "Auto-complete: no auto-revert on dec",
       "method": "PUT",
-      "path": "/works/46",
+      "path": "/works/11",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -491,7 +491,7 @@
     {
       "name": "Create GP for auto-complete",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -500,7 +500,7 @@
     {
       "name": "GP auto-complete: progress = 100",
       "method": "PUT",
-      "path": "/game-profiles/22",
+      "path": "/game-profiles/8",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -509,7 +509,7 @@
     {
       "name": "Create GP count for auto-complete",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -518,7 +518,7 @@
     {
       "name": "GP count: NO auto-complete at >= 100",
       "method": "PUT",
-      "path": "/game-profiles/23",
+      "path": "/game-profiles/9",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -527,7 +527,7 @@
     {
       "name": "Create GP none for auto-complete",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -536,7 +536,7 @@
     {
       "name": "GP none: NO auto-complete",
       "method": "PUT",
-      "path": "/game-profiles/24",
+      "path": "/game-profiles/10",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -545,7 +545,7 @@
     {
       "name": "GP default: 二周目 -> count",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -554,7 +554,7 @@
     {
       "name": "GP default: 二刷 -> count",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -563,7 +563,7 @@
     {
       "name": "GP default: 整合包 -> percent",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -572,7 +572,7 @@
     {
       "name": "GP default: 模组 -> percent",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -581,7 +581,7 @@
     {
       "name": "GP default: 普通 -> none",
       "method": "POST",
-      "path": "/works/45/game-profiles",
+      "path": "/works/10/game-profiles",
       "status_code": 201,
       "expected": null,
       "status": "PASS",
@@ -608,7 +608,7 @@
     {
       "name": "Game work update drops status",
       "method": "PUT",
-      "path": "/works/45",
+      "path": "/works/10",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
@@ -617,88 +617,343 @@
     {
       "name": "Game work no auto-complete",
       "method": "PUT",
-      "path": "/works/45",
+      "path": "/works/10",
       "status_code": 200,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete attachment #13",
+      "name": "Create cascade work",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create cascade GP",
+      "method": "POST",
+      "path": "/works/12/game-profiles",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Create cascade attachment",
+      "method": "POST",
+      "path": "/game-profiles/17/attachments",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Cascade GP exists before delete",
+      "method": "GET",
+      "path": "/game-profiles/17",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Cascade att exists before delete",
+      "method": "GET",
+      "path": "/attachments/4",
+      "status_code": 200,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete cascade work",
       "method": "DELETE",
-      "path": "/attachments/13",
+      "path": "/works/12",
       "status_code": 204,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete attachment #14",
+      "name": "GP cascade deleted",
+      "method": "GET",
+      "path": "/game-profiles/17",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "GameProfile 不存在"
+    },
+    {
+      "name": "Att cascade deleted",
+      "method": "GET",
+      "path": "/attachments/4",
+      "status_code": 404,
+      "expected": 404,
+      "status": "PASS",
+      "detail": "附件不存在"
+    },
+    {
+      "name": "Work without title",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 422,
+      "expected": 422,
+      "status": "PASS",
+      "detail": [
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "title"
+          ],
+          "msg": "Field required",
+          "input": {
+            "category": "anime",
+            "progress_unit": "ep"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Work without category",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 422,
+      "expected": 422,
+      "status": "PASS",
+      "detail": [
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "category"
+          ],
+          "msg": "Field required",
+          "input": {
+            "title": "无分类_6017",
+            "progress_unit": "ep"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Work without progress_unit",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 422,
+      "expected": 422,
+      "status": "PASS",
+      "detail": [
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "progress_unit"
+          ],
+          "msg": "Field required",
+          "input": {
+            "title": "无进度单位_6017",
+            "category": "anime"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tag without name",
+      "method": "POST",
+      "path": "/tags",
+      "status_code": 422,
+      "expected": 422,
+      "status": "PASS",
+      "detail": [
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "name"
+          ],
+          "msg": "Field required",
+          "input": {}
+        }
+      ]
+    },
+    {
+      "name": "Work with invalid category",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 500,
+      "expected": 500,
+      "status": "PASS",
+      "detail": "Internal Server Error"
+    },
+    {
+      "name": "Work with invalid status",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 500,
+      "expected": 500,
+      "status": "PASS",
+      "detail": "Internal Server Error"
+    },
+    {
+      "name": "Create work with total=None",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Page size over limit",
+      "method": "GET",
+      "path": "/works",
+      "status_code": 422,
+      "expected": 422,
+      "status": "PASS",
+      "detail": [
+        {
+          "type": "less_than_equal",
+          "loc": [
+            "query",
+            "page_size"
+          ],
+          "msg": "Input should be less than or equal to 100",
+          "input": "200",
+          "ctx": {
+            "le": 100
+          }
+        }
+      ]
+    },
+    {
+      "name": "Page below minimum",
+      "method": "GET",
+      "path": "/works",
+      "status_code": 422,
+      "expected": 422,
+      "status": "PASS",
+      "detail": [
+        {
+          "type": "greater_than_equal",
+          "loc": [
+            "query",
+            "page"
+          ],
+          "msg": "Input should be greater than or equal to 1",
+          "input": "0",
+          "ctx": {
+            "ge": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create work with bangumi_id",
+      "method": "POST",
+      "path": "/works",
+      "status_code": 201,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete attachment #2",
       "method": "DELETE",
-      "path": "/attachments/14",
+      "path": "/attachments/2",
       "status_code": 204,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete tag #22",
+      "name": "Delete attachment #3",
       "method": "DELETE",
-      "path": "/tags/22",
+      "path": "/attachments/3",
       "status_code": 204,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete tag #23",
+      "name": "Delete tag #26",
       "method": "DELETE",
-      "path": "/tags/23",
+      "path": "/tags/26",
       "status_code": 204,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete work #42",
+      "name": "Delete tag #27",
       "method": "DELETE",
-      "path": "/works/42",
+      "path": "/tags/27",
       "status_code": 204,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete work #43",
+      "name": "Delete work #7",
       "method": "DELETE",
-      "path": "/works/43",
+      "path": "/works/7",
       "status_code": 204,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete work #44",
+      "name": "Delete work #8",
       "method": "DELETE",
-      "path": "/works/44",
+      "path": "/works/8",
       "status_code": 204,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete work #45",
+      "name": "Delete work #9",
       "method": "DELETE",
-      "path": "/works/45",
+      "path": "/works/9",
       "status_code": 204,
       "expected": null,
       "status": "PASS",
       "detail": ""
     },
     {
-      "name": "Delete work #46",
+      "name": "Delete work #10",
       "method": "DELETE",
-      "path": "/works/46",
+      "path": "/works/10",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete work #11",
+      "method": "DELETE",
+      "path": "/works/11",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete work #14",
+      "method": "DELETE",
+      "path": "/works/14",
+      "status_code": 204,
+      "expected": null,
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Delete work #15",
+      "method": "DELETE",
+      "path": "/works/15",
       "status_code": 204,
       "expected": null,
       "status": "PASS",

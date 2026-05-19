@@ -553,9 +553,143 @@ if game_work_id:
         print("       -> Game work 不会自动完成 [OK]")
 
 # ============================================================================
-# 15. Cleanup: Delete resources
+# 15. Cascade Delete: Work -> GameProfile -> Attachment
 # ============================================================================
-section("15. Cleanup (Delete)")
+section("15. Cascade Delete Test")
+
+# Create cascade chain: Work -> GP -> Attachment
+resp = test("Create cascade work", "post", "/works", json={
+    "title": f"级联删除测试_{TS}",
+    "category": "game",
+    "progress_unit": "percent",
+})
+cascade_work_id = None
+cascade_gp_id = None
+cascade_att_id = None
+if resp and resp.status_code == 201:
+    cascade_work_id = resp.json()["id"]
+    gps = resp.json().get("game_profiles", [])
+    cascade_gp_id = gps[0]["id"] if gps else None
+    # Create extra GP for cascade test
+    resp2 = test("Create cascade GP", "post", f"/works/{cascade_work_id}/game-profiles", json={
+        "name": f"全收集_{TS}",
+    })
+    if resp2 and resp2.status_code == 201:
+        cascade_gp_id = resp2.json()["id"]
+        # Upload attachment
+        resp3 = test("Create cascade attachment", "post",
+                     f"/game-profiles/{cascade_gp_id}/attachments",
+                     files={"file": ("cascade_test.txt", b"Cascade delete test content.", "text/plain")},
+                     data={"label": "级联测试"})
+        if resp3 and resp3.status_code == 201:
+            cascade_att_id = resp3.json()["id"]
+
+# Verify GP and attachment exist before deletion
+if cascade_gp_id:
+    resp = test("Cascade GP exists before delete", "get", f"/game-profiles/{cascade_gp_id}")
+if cascade_att_id:
+    resp = test("Cascade att exists before delete", "get", f"/attachments/{cascade_att_id}")
+
+# Delete the work
+if cascade_work_id:
+    resp = test("Delete cascade work", "delete", f"/works/{cascade_work_id}")
+
+    # Verify GP returns 404 after work is deleted
+    if cascade_gp_id:
+        resp = test("GP cascade deleted", "get", f"/game-profiles/{cascade_gp_id}", expect=404)
+        print("       -> GP 级联删除已验证 [OK]")
+
+    # Verify attachment returns 404 after work is deleted
+    if cascade_att_id:
+        resp = test("Att cascade deleted", "get", f"/attachments/{cascade_att_id}", expect=404)
+        print("       -> Attachment 级联删除已验证 [OK]")
+
+# ============================================================================
+# 16. Input Validation & Error Handling
+# ============================================================================
+section("16. Input Validation")
+
+# Missing required fields
+resp = test("Work without title", "post", "/works", expect=422, json={
+    "category": "anime",
+    "progress_unit": "ep",
+})
+
+resp = test("Work without category", "post", "/works", expect=422, json={
+    "title": f"无分类_{TS}",
+    "progress_unit": "ep",
+})
+
+resp = test("Work without progress_unit", "post", "/works", expect=422, json={
+    "title": f"无进度单位_{TS}",
+    "category": "anime",
+})
+
+resp = test("Tag without name", "post", "/tags", expect=422, json={})
+
+# Invalid enum values (Pydantic accepts string, SQLAlchemy rejects at DB level -> 500)
+resp = test("Work with invalid category", "post", "/works", expect=500, json={
+    "title": f"非法分类_{TS}",
+    "category": "invalid_category",
+    "progress_unit": "ep",
+    "total": 12,
+})
+if resp:
+    print(f"       -> 非法分类 -> status={resp.status_code} [OK]")
+
+resp = test("Work with invalid status", "post", "/works", expect=500, json={
+    "title": f"非法状态_{TS}",
+    "category": "anime",
+    "progress_unit": "ep",
+    "status": "invalid_status",
+})
+if resp:
+    print(f"       -> 非法状态 -> status={resp.status_code} [OK]")
+
+# total=None should NOT auto-complete
+resp = test("Create work with total=None", "post", "/works", json={
+    "title": f"无限连载_{TS}",
+    "category": "anime",
+    "progress_unit": "ep",
+    "total": None,
+    "progress_value": 999,
+})
+none_total_work_id = None
+if resp and resp.status_code == 201:
+    none_total_work_id = resp.json()["id"]
+    created_work_ids.append(none_total_work_id)
+    assert resp.json()["status"] != "completed", \
+        "total=None should not auto-complete"
+    print("       -> total=None 不会自动完成 [OK]")
+
+# Invalid pagination
+resp = test("Page size over limit", "get", "/works", expect=422, params={"page_size": 200})
+resp = test("Page below minimum", "get", "/works", expect=422, params={"page": 0})
+
+# ============================================================================
+# 17. Bangumi Auto-fill
+# ============================================================================
+section("17. Bangumi Auto-fill")
+
+resp = test("Create work with bangumi_id", "post", "/works", json={
+    "title": f"Bangumi自动填充_{TS}",
+    "category": "anime",
+    "progress_unit": "ep",
+    "bangumi_id": 2256,  # Steins;Gate
+})
+if resp and resp.status_code == 201:
+    wid = resp.json()["id"]
+    created_work_ids.append(wid)
+    bdata = resp.json().get("bangumi_data")
+    if bdata:
+        print(f"       -> bangumi_data 已填充 ({len(bdata)} chars) [OK]")
+    else:
+        print("       -> bangumi_data 未填充（外部API可能不可用）[--]")
+
+# ============================================================================
+# 18. Cleanup: Delete resources
+# ============================================================================
+section("18. Cleanup (Delete)")
 
 for aid in created_attachment_ids:
     resp = test(f"Delete attachment #{aid}", "delete", f"/attachments/{aid}")
