@@ -105,6 +105,7 @@ const items = [
   transition: all 0.15s;
 }
 .ni:hover { color: var(--text-secondary); background: var(--bg-surface-hover); }
+.ni:active { transform: none; }
 .ni.on { color: var(--primary); background: var(--primary-light); font-weight: 600; }
 .ni-i { width: 17px; height: 17px; }
 </style>

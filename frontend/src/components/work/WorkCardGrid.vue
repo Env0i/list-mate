@@ -52,7 +52,7 @@ const gpProgress = computed(() => {
 
 const st = computed(() => {
   const cat = props.work.category
-  const key = props.work.status || gameStatus.value || 'wish'
+  const key = cat === 'game' ? (gameStatus.value || 'wish') : (props.work.status || 'wish')
   return { label: statusLabels[cat]?.[key] || key, bg: statusBg[key] || '#A39F98' }
 })
 

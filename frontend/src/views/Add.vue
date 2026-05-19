@@ -2,6 +2,7 @@
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { worksApi } from '../api/client'
+import { showToast } from '../utils/toast'
 import PlatformSelector from '../components/work/PlatformSelector.vue'
 
 const router = useRouter()
@@ -61,9 +62,11 @@ async function submit() {
   error.value = ''
   try {
     const { data } = await worksApi.create(form.value)
+    showToast('作品已添加')
     router.push(`/works/${data.id}`)
   } catch (e) {
     error.value = e.response?.data?.detail || '创建失败'
+    showToast('创建失败', 'error')
   } finally {
     saving.value = false
   }

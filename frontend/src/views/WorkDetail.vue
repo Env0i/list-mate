@@ -6,6 +6,7 @@ import CategoryBadge from '../components/work/CategoryBadge.vue'
 import ProgressBar from '../components/work/ProgressBar.vue'
 import PlatformSelector from '../components/work/PlatformSelector.vue'
 import { getPlatformIconUrl } from '../utils/platformIcons'
+import { showToast } from '../utils/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -101,9 +102,11 @@ async function del() {
   deleting.value = true
   try {
     await worksApi.delete(route.params.id)
+    showToast('作品已删除')
     router.push('/')
   } catch (e) {
     console.error('Failed to delete', e)
+    showToast('删除失败', 'error')
     deleting.value = false
   }
 }
@@ -119,8 +122,10 @@ async function uploadCover(e) {
     // Force reload to get the real cover
     const { data } = await worksApi.get(route.params.id)
     work.value = data
+    showToast('封面上传成功')
   } catch (e) {
     console.error('Cover upload failed', e)
+    showToast('封面上传失败', 'error')
   } finally {
     coverUploading.value = false
     e.target.value = ''
@@ -166,8 +171,10 @@ async function saveEdit() {
     // Update local tags from allTags
     work.value.tags = allTags.value.filter(t => selectedTagIds.value.includes(t.id))
     showEditModal.value = false
+    showToast('保存成功')
   } catch (e) {
     console.error('Failed to save', e)
+    showToast('保存失败', 'error')
   } finally {
     saving.value = false
   }
@@ -542,16 +549,14 @@ onMounted(load)
                   <div class="modal-section">
                     <h3 class="modal-section-title">追踪信息</h3>
                     <div class="modal-fields">
-                      <div class="mf-row">
-                        <label class="mf-label mf-sm">
-                          <span>开始时间</span>
-                          <input v-model="form.start_date" type="date" />
-                        </label>
-                        <label class="mf-label mf-sm">
-                          <span>完成时间</span>
-                          <input v-model="form.finish_date" type="date" />
-                        </label>
-                      </div>
+                      <label class="mf-label">
+                        <span>开始时间</span>
+                        <input v-model="form.start_date" type="date" />
+                      </label>
+                      <label class="mf-label">
+                        <span>完成时间</span>
+                        <input v-model="form.finish_date" type="date" />
+                      </label>
                       <label class="mf-label">
                         <span>平台</span>
                         <PlatformSelector :category="work?.category" v-model="form.platform" />
@@ -588,11 +593,11 @@ onMounted(load)
                           <span>购买价格</span>
                           <input v-model.number="form.purchase_price" type="number" min="0" step="0.01" placeholder="0" />
                         </label>
-                        <label class="mf-label mf-sm">
-                          <span>购买时间</span>
-                          <input v-model="form.purchase_date" type="date" />
-                        </label>
                       </div>
+                      <label class="mf-label" v-if="!form.is_free">
+                        <span>购买时间</span>
+                        <input v-model="form.purchase_date" type="date" />
+                      </label>
                       <div class="mf-row">
                         <label class="mf-label mf-sm">
                           <span>游戏时长（小时）</span>
@@ -818,6 +823,8 @@ onMounted(load)
 
 @media (max-width: 767px) {
   .cover-card { width: 200px; }
+  .tracking-card { padding: 18px; }
+  .tracking-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
 }
 
 /* Info card */
@@ -1101,8 +1108,18 @@ onMounted(load)
   .gp-rating { margin-left: auto; }
 }
 @media (max-width: 480px) {
+  .gp-bar { padding: 10px 12px; gap: 6px; }
+  .gp-name { font-size: var(--fs-xs); min-width: 40px; }
+  .gp-st { font-size: 8px; padding: 1px 5px; }
+  .gp-prog { gap: 6px; }
+  .gp-exp-rail { height: 4px; }
+  .gp-prog-lbl { font-size: 10px; min-width: 36px; }
+  .gp-rating { font-size: 10px; }
+}
+@media (max-width: 480px) {
   .top-bar { flex-wrap: wrap; gap: 8px; }
   .back-btn, .act-btn { padding: 8px 12px; font-size: var(--fs-xs); }
+  .tracking-grid { grid-template-columns: 1fr; }
 }
 
 /* ===== Edit Modal — collector's spec sheet ===== */
@@ -1200,12 +1217,14 @@ onMounted(load)
 }
 @media (max-width: 700px) {
   .modal-grid { grid-template-columns: 1fr; }
+  .mf-row { flex-wrap: wrap; }
+  .mf-sm { min-width: 0; flex: 1 1 100%; }
 }
 @media (max-width: 480px) {
   .modal-body { padding: 16px; }
   .modal-hd { flex-wrap: wrap; gap: 12px; }
-  .modal-ft { padding: 14px 16px 20px; }
-  .modal-cancel, .modal-save { flex: 1; justify-content: center; display: flex; }
+  .modal-ft { padding: 14px 16px 20px; gap: 10px; }
+  .modal-cancel, .modal-save { flex: 1; justify-content: center; display: flex; height: 42px; font-size: var(--fs-base); }
 }
 .modal-col { display: flex; flex-direction: column; gap: 20px; }
 
@@ -1242,7 +1261,12 @@ onMounted(load)
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background: var(--bg-primary);
+  width: 100%;
+  min-width: 0;
   transition: border-color 0.15s, background 0.15s;
+}
+@media (max-width: 480px) {
+  .mf-label input, .mf-label select, .mf-label textarea { padding: 6px 8px; }
 }
 .mf-label input:focus, .mf-label select:focus, .mf-label textarea:focus {
   border-color: var(--text-tertiary);
@@ -1354,22 +1378,40 @@ onMounted(load)
   border-radius: var(--radius-md);
   font-size: var(--fs-sm);
   font-weight: 600;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  border: 1px solid var(--color-border);
   transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.modal-cancel:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
+.modal-cancel:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--text-tertiary);
+  color: var(--text-primary);
+}
 .modal-save {
   height: 36px;
-  padding: 0 24px;
+  padding: 0 28px;
   border-radius: var(--radius-md);
   background: var(--primary);
   color: white;
   font-size: var(--fs-sm);
   font-weight: 700;
+  letter-spacing: 0.3px;
   transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.modal-save:hover { background: var(--primary-hover); }
-.modal-save:disabled { opacity: 0.5; }
+.modal-save:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 3px 12px rgba(255, 107, 53, 0.35);
+  transform: translateY(-1px);
+}
+.modal-save:disabled { opacity: 0.5; box-shadow: none; transform: none; }
 
 /* Modal transitions */
 .modal-enter-active, .modal-leave-active {
@@ -1404,5 +1446,6 @@ onMounted(load)
   cursor: pointer; transition: all 0.15s;
 }
 .tchip:hover { opacity: 0.8; }
+.tchip:active { transform: none; }
 .tchip.on { font-weight: 700; }
 </style>

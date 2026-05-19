@@ -84,10 +84,8 @@ def _upload_dir(sftp, local_dir, remote_dir, ignore=None):
     for root, dirs, files in os.walk(local_dir):
         # 过滤掉忽略的目录
         if ignore:
-            dirs[:] = [d for d in dirs if d not in ignore and not any(
-                d == i or d.endswith(i.replace("*", "")) for i in ignore
-            )]
-            files = [f for f in files if not any(
+            dirs[:] = [d for d in dirs if d not in ignore]
+            files = [f for f in files if f not in ignore and not any(
                 f.endswith(i.replace("*", "")) for i in ignore if "*" in i
             )]
 
@@ -160,6 +158,8 @@ def setup_configs(client):
 
     location / {
         try_files $uri $uri/ /index.html;
+        expires -1;
+        add_header Cache-Control "no-cache, must-revalidate";
     }
 
     location /api/ {

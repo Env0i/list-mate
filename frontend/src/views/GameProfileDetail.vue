@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { worksApi, gameProfilesApi, attachmentsApi } from '../api/client'
+import { showToast } from '../utils/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -83,8 +84,10 @@ async function uploadAttachment(e) {
   try {
     await attachmentsApi.upload(route.params.gpid, file)
     await loadAttachments()
+    showToast('附件上传成功')
   } catch (e) {
     console.error('Upload failed', e)
+    showToast('上传失败', 'error')
   } finally {
     uploading.value = false
     e.target.value = ''
@@ -100,8 +103,10 @@ async function deleteAttachment(id) {
   try {
     await attachmentsApi.delete(id)
     attachments.value = attachments.value.filter(a => a.id !== id)
+    showToast('附件已删除')
   } catch (e) {
     console.error('Delete failed', e)
+    showToast('删除失败', 'error')
   }
 }
 
@@ -154,8 +159,10 @@ async function save() {
     }
     const { data } = await gameProfilesApi.update(route.params.gpid, body)
     gp.value = data
+    showToast('保存成功')
   } catch (e) {
     console.error('Failed to save', e)
+    showToast('保存失败', 'error')
   } finally {
     saving.value = false
   }
@@ -166,9 +173,11 @@ async function del() {
   deleting.value = true
   try {
     await gameProfilesApi.delete(route.params.gpid)
+    showToast('配置已删除')
     router.push(`/works/${route.params.id}`)
   } catch (e) {
     console.error('Failed to delete', e)
+    showToast('删除失败', 'error')
     deleting.value = false
   }
 }
@@ -441,11 +450,17 @@ onMounted(load)
 }
 @media (max-width: 639px) { .detail-card { padding: 20px; } }
 @media (max-width: 480px) {
-  .record-grid { grid-template-columns: 1fr; }
+  .detail-card { padding: 16px; }
   .top-bar { flex-wrap: wrap; gap: 8px; }
   .back-btn, .act-btn { padding: 8px 12px; font-size: var(--fs-xs); }
   .st-opt { height: 28px; padding: 0 12px; font-size: 11px; }
   .pt-opt { height: 28px; padding: 0 12px; font-size: 11px; }
+  .section { margin-bottom: 20px; }
+  .att-item { flex-wrap: wrap; gap: 6px; }
+  .att-info { min-width: 0; width: 100%; }
+  .att-actions { margin-left: auto; }
+  .mods-tags { gap: 4px; }
+  .mod-tag { font-size: 10px; padding: 3px 8px; }
 }
 
 /* Sections */
@@ -476,6 +491,7 @@ onMounted(load)
   transition: all 0.15s;
 }
 .st-opt:hover { border-color: var(--text-tertiary); }
+.st-opt:active { transform: none; }
 .st-opt.on { border-color: transparent; }
 
 /* Progress type */
@@ -492,6 +508,7 @@ onMounted(load)
   transition: all 0.15s;
 }
 .pt-opt:hover { border-color: var(--text-tertiary); }
+.pt-opt:active { transform: none; }
 .pt-opt.on {
   background: var(--c-game);
   color: white;
@@ -538,10 +555,14 @@ onMounted(load)
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+@media (max-width: 767px) {
+  .record-grid { grid-template-columns: 1fr; gap: 10px; }
+}
 .rec-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 .rec-item span {
   font-size: var(--fs-xs);
@@ -555,8 +576,16 @@ onMounted(load)
   border: 1px solid var(--color-border);
   background: var(--bg-primary);
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 .rec-item input:focus { border-color: var(--text-tertiary); background: var(--bg-surface); outline: none; }
+.rec-item input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none;
+}
+@media (max-width: 480px) {
+  .rec-item input { padding: 6px 8px; }
+}
 .rec-full { grid-column: 1 / -1; }
 
 /* Mods list */
@@ -722,6 +751,13 @@ onMounted(load)
 .text-inp:focus { border-color: var(--text-tertiary); background: var(--bg-surface); outline: none; }
 
 /* Save */
+@media (max-width: 480px) {
+  .progress-row { gap: 8px; }
+  .step-btn { width: 32px; height: 32px; }
+  .progress-inp { width: 72px; font-size: var(--fs-lg); padding: 6px 8px; }
+  .stepper-label { font-size: var(--fs-xs); }
+  .save-btn { height: 44px; font-size: var(--fs-base); }
+}
 .save-btn {
   width: 100%;
   height: 42px;

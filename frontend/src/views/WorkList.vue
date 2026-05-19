@@ -253,6 +253,7 @@ function catStyle(c) {
   white-space: nowrap;
 }
 .cat-tab:hover { color: var(--text-secondary); }
+.cat-tab:active { transform: none; }
 .cat-tab.on {
   background: var(--bg-surface);
   color: var(--text-primary);
@@ -287,6 +288,7 @@ function catStyle(c) {
   transition: all 0.15s;
 }
 .st-filter:hover { color: var(--text-secondary); }
+.st-filter:active { transform: none; }
 .st-filter.on {
   background: var(--bg-surface);
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);

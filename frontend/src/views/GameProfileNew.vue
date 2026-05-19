@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { gameProfilesApi } from '../api/client'
+import { showToast } from '../utils/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,9 +20,11 @@ async function submit() {
   error.value = ''
   try {
     const { data } = await gameProfilesApi.create(route.params.id, form.value)
+    showToast('配置已创建')
     router.push(`/works/${route.params.id}/game-profiles/${data.id}`)
   } catch (e) {
     error.value = e.response?.data?.detail || '创建失败'
+    showToast('创建失败', 'error')
   } finally {
     saving.value = false
   }
