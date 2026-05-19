@@ -6,8 +6,8 @@ const routes = [
   { path: '/works/:id/edit', redirect: to => ({ path: `/works/${to.params.id}` }) },
   { path: '/search', name: 'search', component: () => import('../views/Search.vue') },
   { path: '/add', name: 'add', component: () => import('../views/Add.vue') },
-  { path: '/stats', name: 'stats', component: () => import('../views/StatsPlaceholder.vue') },
-  { path: '/tags', name: 'tags', component: () => import('../views/TagsPlaceholder.vue') },
+  { path: '/stats', name: 'stats', component: () => import('../views/Stats.vue') },
+  { path: '/tags', name: 'tags', component: () => import('../views/Tags.vue') },
   {
     path: '/works/:id/game-profiles/new',
     name: 'game-profile-new',
