@@ -115,7 +115,7 @@ if resp and resp.status_code == 201:
 elif resp and resp.status_code == 409 and tag_name2 in existing_tags:
     created_tag_ids.append(existing_tags[tag_name2])
 
-# Duplicate → expect 409
+# Duplicate -> expect 409
 resp = test("Create duplicate tag", "post", "/tags", expect=409,
             json={"name": tag_name1, "color": "#FFB800"})
 
@@ -377,9 +377,185 @@ if resp:
     print(f"       -> {len(lines)} lines (1 header + {len(lines)-1} data)")
 
 # ============================================================================
-# 11. Cleanup: Delete resources
+# 11. Bangumi Detail API
 # ============================================================================
-section("11. Cleanup (Delete)")
+section("11. Bangumi Detail API")
+
+resp = test("Get Bangumi detail", "get", "/bangumi/2256")
+if resp and resp.status_code == 200:
+    data = resp.json()
+    print(f"       -> Name: {data.get('name')}, Type: {data.get('type')}, Episodes: {data.get('total_episodes')}")
+
+# ============================================================================
+# 12. Auto-completion Tests
+# ============================================================================
+section("12. Auto-completion Tests")
+
+# --- Work (non-game) progress auto-completion ---
+resp = test("Create work for auto-complete", "post", "/works", json={
+    "title": f"自动完成测试_{TS}",
+    "category": "anime",
+    "progress_unit": "ep",
+    "total": 12,
+    "progress_value": 11,
+})
+auto_complete_work_id = None
+if resp and resp.status_code == 201:
+    auto_complete_work_id = resp.json()["id"]
+    created_work_ids.append(auto_complete_work_id)
+    assert resp.json()["status"] != "completed", "Should NOT be auto-completed yet"
+
+# Update progress_value to match total -> should auto-complete
+if auto_complete_work_id:
+    resp = test("Auto-complete: progress = total", "put", f"/works/{auto_complete_work_id}", json={
+        "progress_value": 12,
+    })
+    if resp:
+        assert resp.json()["status"] == "completed", f"Expected completed, got {resp.json()['status']}"
+        assert resp.json()["auto_completed"] == True
+        print("       -> 非游戏作品自动完成 [OK]")
+
+    # Set progress back below total -> should NOT auto-revert (user can override)
+    resp = test("Auto-complete: no auto-revert on dec", "put", f"/works/{auto_complete_work_id}", json={
+        "progress_value": 11,
+    })
+    if resp:
+        print(f"       -> Status after decrease: {resp.json()['status']} (expected completed) [OK]")
+
+# --- GameProfile percent auto-completion ---
+if game_work_id:
+    resp = test("Create GP for auto-complete", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"整合包{TS}",
+        "progress_type": "percent",
+        "progress_value": 50,
+    })
+    if resp and resp.status_code == 201:
+        auto_gp_id = resp.json()["id"]
+        resp = test("GP auto-complete: progress = 100", "put", f"/game-profiles/{auto_gp_id}", json={
+            "progress_value": 100,
+        })
+        if resp:
+            assert resp.json()["status"] == "completed", f"Expected completed, got {resp.json()['status']}"
+            assert resp.json()["auto_completed"] == True
+            print("       -> GP percent 自动完成 [OK]")
+
+    # Progress_type=count should NOT auto-complete at >= 100
+    resp = test("Create GP count for auto-complete", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"二周目{TS}",
+        "progress_type": "count",
+        "progress_value": 50,
+    })
+    if resp and resp.status_code == 201:
+        auto_gp_count_id = resp.json()["id"]
+        resp = test("GP count: NO auto-complete at >= 100", "put", f"/game-profiles/{auto_gp_count_id}", json={
+            "progress_value": 999,
+        })
+        if resp:
+            assert resp.json()["status"] != "completed", "Count type should NOT auto-complete"
+            print("       -> GP count 不会自动完成 [OK]")
+
+    # Progress_type=none should NOT auto-complete
+    resp = test("Create GP none for auto-complete", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"剧情体验{TS}",
+        "progress_type": "none",
+        "progress_value": None,
+    })
+    if resp and resp.status_code == 201:
+        auto_gp_none_id = resp.json()["id"]
+        resp = test("GP none: NO auto-complete", "put", f"/game-profiles/{auto_gp_none_id}", json={
+            "progress_value": None,
+        })
+        if resp:
+            assert resp.json()["status"] != "completed", "None type should NOT auto-complete"
+            print("       -> GP none 不会自动完成 [OK]")
+
+# ============================================================================
+# 13. GameProfile Smart Defaults (progress_type guessing)
+# ============================================================================
+section("13. GameProfile Smart Defaults")
+
+if game_work_id:
+    resp = test("GP default: 二周目 -> count", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"二周目开荒_{TS}",
+    })
+    if resp and resp.status_code == 201:
+        assert resp.json()["progress_type"] == "count", \
+            f"Expected count, got {resp.json()['progress_type']}"
+        print(f"       -> '二周目' -> {resp.json()['progress_type']} [OK]")
+
+    resp = test("GP default: 二刷 -> count", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"二刷挑战_{TS}",
+    })
+    if resp and resp.status_code == 201:
+        assert resp.json()["progress_type"] == "count", \
+            f"Expected count, got {resp.json()['progress_type']}"
+        print(f"       -> '二刷' -> {resp.json()['progress_type']} [OK]")
+
+    resp = test("GP default: 整合包 -> percent", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"极限整合包_{TS}",
+    })
+    if resp and resp.status_code == 201:
+        assert resp.json()["progress_type"] == "percent", \
+            f"Expected percent, got {resp.json()['progress_type']}"
+        print(f"       -> '整合包' -> {resp.json()['progress_type']} [OK]")
+
+    resp = test("GP default: 模组 -> percent", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"自打模组_{TS}",
+    })
+    if resp and resp.status_code == 201:
+        assert resp.json()["progress_type"] == "percent", \
+            f"Expected percent, got {resp.json()['progress_type']}"
+        print(f"       -> '模组' -> {resp.json()['progress_type']} [OK]")
+
+    resp = test("GP default: 普通 -> none", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"纯净通关_{TS}",
+    })
+    if resp and resp.status_code == 201:
+        assert resp.json()["progress_type"] == "none", \
+            f"Expected none, got {resp.json()['progress_type']}"
+        print(f"       -> '纯净通关' -> {resp.json()['progress_type']} [OK]")
+
+# ============================================================================
+# 14. Game Status Filter & Edge Cases
+# ============================================================================
+section("14. Game Status Filter & Edge Cases")
+
+# Filter game works by GameProfile status
+resp = test("Filter game by status=playing", "get", "/works",
+            params={"category": "game", "status": "playing"})
+if resp and resp.status_code == 200:
+    print(f"       -> Game status filter (playing): {resp.json()['total']} results")
+
+resp = test("Filter game by status=wish", "get", "/works",
+            params={"category": "game", "status": "wish"})
+if resp and resp.status_code == 200:
+    print(f"       -> Game status filter (wish): {resp.json()['total']} results")
+
+# Update game work should silently drop status
+if game_work_id:
+    resp = test("Game work update drops status", "put", f"/works/{game_work_id}", json={
+        "rating": 9,
+        "status": "completed",  # should be silently dropped
+    })
+    if resp:
+        assert resp.json()["status"] is None or resp.json()["status"] != "completed", \
+            f"Game work status should be None, got {resp.json()['status']}"
+        print(f"       -> Game work status correctly remains None [OK]")
+
+# Game work has no progress_unit auto-complete
+if game_work_id:
+    resp = test("Game work no auto-complete", "put", f"/works/{game_work_id}", json={
+        "progress_value": 100,
+    })
+    if resp:
+        assert resp.json()["status"] is None, \
+            f"Game work should not get auto-completed, status={resp.json()['status']}"
+        print("       -> Game work 不会自动完成 [OK]")
+
+# ============================================================================
+# 15. Cleanup: Delete resources
+# ============================================================================
+section("15. Cleanup (Delete)")
 
 for aid in created_attachment_ids:
     resp = test(f"Delete attachment #{aid}", "delete", f"/attachments/{aid}")

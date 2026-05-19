@@ -81,7 +81,8 @@ def update_game_profile(profile_id: int, data: GameProfileUpdate, db: Session = 
             and not gp.auto_completed
         ):
             record_timeline(db, gp.work_id, "status_change", game_profile_id=gp.id,
-                            old_value=gp.status.value, new_value=GameStatus.COMPLETED.value)
+                            old_value=gp.status.value if gp.status else None,
+                            new_value=GameStatus.COMPLETED.value)
             gp.status = GameStatus.COMPLETED
             gp.auto_completed = True
 

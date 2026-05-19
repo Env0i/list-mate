@@ -217,7 +217,8 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
             and not work.auto_completed
         ):
             record_timeline(db, work.id, "status_change",
-                            old_value=work.status.value, new_value=WorkStatus.COMPLETED.value)
+                            old_value=work.status.value if work.status else None,
+                            new_value=WorkStatus.COMPLETED.value)
             work.status = WorkStatus.COMPLETED
             work.auto_completed = True
 
