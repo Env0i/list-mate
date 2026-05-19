@@ -1,6 +1,8 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
+
+from ..models.game_profile import GameStatus, ProgressType
 
 
 class GameProfileCreate(BaseModel):
@@ -18,6 +20,26 @@ class GameProfileCreate(BaseModel):
     notes: Optional[str] = None
     sort_order: int = 0
 
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid = {e.value for e in GameStatus}
+        if v not in valid:
+            raise ValueError(f"无效游戏状态 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
+
+    @field_validator("progress_type")
+    @classmethod
+    def validate_progress_type(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid = {e.value for e in ProgressType}
+        if v not in valid:
+            raise ValueError(f"无效进度类型 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
+
 
 class GameProfileUpdate(BaseModel):
     name: Optional[str] = None
@@ -33,6 +55,26 @@ class GameProfileUpdate(BaseModel):
     mods_list: Optional[str] = None
     notes: Optional[str] = None
     sort_order: Optional[int] = None
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid = {e.value for e in GameStatus}
+        if v not in valid:
+            raise ValueError(f"无效游戏状态 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
+
+    @field_validator("progress_type")
+    @classmethod
+    def validate_progress_type(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid = {e.value for e in ProgressType}
+        if v not in valid:
+            raise ValueError(f"无效进度类型 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
 
 
 class GameProfileResponse(BaseModel):

@@ -627,8 +627,8 @@ resp = test("Work without progress_unit", "post", "/works", expect=422, json={
 
 resp = test("Tag without name", "post", "/tags", expect=422, json={})
 
-# Invalid enum values (Pydantic accepts string, SQLAlchemy rejects at DB level -> 500)
-resp = test("Work with invalid category", "post", "/works", expect=500, json={
+# Invalid enum values (now caught by Pydantic validators -> 422)
+resp = test("Work with invalid category", "post", "/works", expect=422, json={
     "title": f"非法分类_{TS}",
     "category": "invalid_category",
     "progress_unit": "ep",
@@ -637,7 +637,7 @@ resp = test("Work with invalid category", "post", "/works", expect=500, json={
 if resp:
     print(f"       -> 非法分类 -> status={resp.status_code} [OK]")
 
-resp = test("Work with invalid status", "post", "/works", expect=500, json={
+resp = test("Work with invalid status", "post", "/works", expect=422, json={
     "title": f"非法状态_{TS}",
     "category": "anime",
     "progress_unit": "ep",
@@ -687,9 +687,234 @@ if resp and resp.status_code == 201:
         print("       -> bangumi_data 未填充（外部API可能不可用）[--]")
 
 # ============================================================================
-# 18. Cleanup: Delete resources
+# 19. Tag Filtering & Combined Filters
 # ============================================================================
-section("18. Cleanup (Delete)")
+section("19. Tag Filtering & Combined Filters")
+
+# Filter by tag_id
+if created_tag_ids:
+    resp = test("Filter works by tag_id", "get", "/works", params={"tag_id": created_tag_ids[0]})
+    if resp:
+        print(f"       -> tag_id filter: {resp.json()['total']} results [OK]")
+
+# Combined category + q search
+resp = test("Combined category + q", "get", "/works", params={"category": "anime", "q": "测试"})
+if resp:
+    print(f"       -> anime + '测试': {resp.json()['total']} results [OK]")
+
+# Combined category + status (non-game)
+resp = test("Combined category + status", "get", "/works", params={"category": "anime", "status": "watching"})
+if resp:
+    print(f"       -> anime + watching: {resp.json()['total']} results [OK]")
+
+# Combined all filters
+if created_tag_ids:
+    resp = test("Combined category+status+tag_id", "get", "/works",
+                params={"category": "anime", "status": "watching", "tag_id": created_tag_ids[0]})
+    if resp:
+        print(f"       -> combined filters: {resp.json()['total']} results [OK]")
+
+# Search no results
+resp = test("Search no results", "get", "/works", params={"q": "___不存在的作品名___"})
+if resp:
+    assert resp.json()["total"] == 0
+    print("       -> 无结果搜索返回空 [OK]")
+
+# ============================================================================
+# 20. GameProfile Edge Cases
+# ============================================================================
+section("20. GameProfile Edge Cases")
+
+if game_work_id:
+    # Create GP with wait_buy status
+    resp = test("GP with wait_buy status", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"等打折_{TS}",
+        "status": "wait_buy",
+    })
+    gp_wait_buy_id = None
+    if resp and resp.status_code == 201:
+        gp_wait_buy_id = resp.json()["id"]
+        assert resp.json()["status"] == "wait_buy"
+        print("       -> wait_buy 状态 [OK]")
+
+    # Create GP with wait_sale status
+    resp = test("GP with wait_sale status", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"等史低_{TS}",
+        "status": "wait_sale",
+    })
+    gp_wait_sale_id = None
+    if resp and resp.status_code == 201:
+        gp_wait_sale_id = resp.json()["id"]
+        assert resp.json()["status"] == "wait_sale"
+        print("       -> wait_sale 状态 [OK]")
+
+    # Delete a GP successfully
+    if gp_wait_sale_id:
+        resp = test("Delete GP successfully", "delete", f"/game-profiles/{gp_wait_sale_id}")
+        if resp:
+            # Verify 404 after delete
+            resp = test("Verify GP deleted", "get", f"/game-profiles/{gp_wait_sale_id}", expect=404)
+            print("       -> GP 删除并验证 [OK]")
+
+    # Update GP with subset of fields (partial update)
+    if gp_wait_buy_id:
+        resp = test("Update GP partial (just notes)", "put", f"/game-profiles/{gp_wait_buy_id}", json={
+            "notes": "等到50% off就买",
+            "rating": 0,
+        })
+        if resp:
+            assert resp.json()["notes"] == "等到50% off就买"
+            assert resp.json()["rating"] == 0
+            assert resp.json()["status"] == "wait_buy"  # unchanged
+            print("       -> GP 部分字段更新 [OK]")
+
+    # GameProfile progress_type change
+    resp = test("Create GP for type change test", "post", f"/works/{game_work_id}/game-profiles", json={
+        "name": f"类型切换_{TS}",
+        "progress_type": "count",
+    })
+    gp_type_id = None
+    if resp and resp.status_code == 201:
+        gp_type_id = resp.json()["id"]
+        assert resp.json()["progress_type"] == "count"
+        # Switch to percent
+        resp = test("Change GP progress_type", "put", f"/game-profiles/{gp_type_id}", json={
+            "progress_type": "percent",
+            "progress_value": 50,
+        })
+        if resp:
+            assert resp.json()["progress_type"] == "percent"
+            print("       -> progress_type 切换 [OK]")
+
+    # Empty body update (no-op)
+    if gp_wait_buy_id:
+        resp = test("GP update empty body", "put", f"/game-profiles/{gp_wait_buy_id}", json={})
+        if resp:
+            assert resp.status_code == 200
+            print("       -> GP 空 body 更新 [OK]")
+
+# ============================================================================
+# 21. Attachment Content Verification
+# ============================================================================
+section("21. Attachment Content Verification")
+
+if game_work_id and created_game_profile_id:
+    # Upload with specific content, then download and verify
+    test_content = b"Hello! This is test content for attachment verification. \x00\x01\x02"
+    resp = test("Upload attachment for verify", "post",
+                f"/game-profiles/{created_game_profile_id}/attachments",
+                files={"file": ("verify_test.bin", test_content, "application/octet-stream")},
+                data={"label": "验证文件"})
+    verify_att_id = None
+    if resp and resp.status_code == 201:
+        verify_att_id = resp.json()["id"]
+        print(f"       -> 上传验证文件 id={verify_att_id} [OK]")
+
+    # Download and verify content matches exactly
+    if verify_att_id:
+        resp = test("Download and verify content", "get", f"/attachments/{verify_att_id}")
+        if resp:
+            assert resp.content == test_content, "Attachment content mismatch!"
+            print(f"       -> 内容完整验证 ({len(resp.content)} bytes) [OK]")
+
+        # Cleanup verify attachment
+        test("Cleanup verify attachment", "delete", f"/attachments/{verify_att_id}")
+
+    # Upload empty file
+    resp = test("Upload empty file", "post", f"/game-profiles/{created_game_profile_id}/attachments",
+                files={"file": ("empty.txt", b"", "text/plain")},
+                data={"label": "空文件"})
+    if resp and resp.status_code == 201:
+        empty_att_id = resp.json()["id"]
+        resp = test("Download empty file", "get", f"/attachments/{empty_att_id}")
+        if resp:
+            assert resp.content == b""
+            print("       -> 空文件上传下载 [OK]")
+        test("Cleanup empty attachment", "delete", f"/attachments/{empty_att_id}")
+
+# ============================================================================
+# 22. Edge Cases & Schema Verification
+# ============================================================================
+section("22. Edge Cases & Schema Verification")
+
+# Non-game work should have empty game_profiles
+anime_work_id = created_work_ids[0] if created_work_ids else None
+if anime_work_id:
+    resp = test("Anime work detail", "get", f"/works/{anime_work_id}")
+    if resp:
+        assert resp.json()["game_profiles"] == []
+        assert resp.json()["tags"] is not None
+        print("       -> 非游戏 game_profiles 为空 [OK]")
+
+# Work with all optional fields populated
+resp = test("Create work all fields", "post", "/works", json={
+    "title": f"全字段测试_{TS}",
+    "category": "novel",
+    "sub_category": "轻小说",
+    "progress_unit": "chapter",
+    "total": 500,
+    "progress_value": 10,
+    "status": "watching",
+    "rating": 7,
+    "review": "测试全字段创建",
+    "summary": "这是一本轻小说",
+    "start_date": "2026-01-01",
+    "finish_date": None,
+    "platform": "Web",
+    "purchase_platform": "Kindle",
+    "purchase_date": "2026-01-15",
+    "purchase_price": 29.99,
+    "playtime_hours": None,
+    "replay_count": None,
+    "priority": 2,
+    "external_links": "https://example.com",
+    "tag_ids": created_tag_ids,
+})
+if resp and resp.status_code == 201:
+    all_fields_id = resp.json()["id"]
+    created_work_ids.append(all_fields_id)
+    for field in ["title", "category", "progress_unit", "total", "progress_value",
+                  "status", "rating", "review", "summary", "start_date",
+                  "platform", "purchase_platform", "purchase_price", "priority"]:
+        assert resp.json().get(field) is not None or field == "status", \
+            f"Field {field} should not be None"
+    print("       -> 全字段创建验证 [OK]")
+
+# Update work with empty body
+if anime_work_id:
+    resp = test("Work update empty body", "put", f"/works/{anime_work_id}", json={})
+    if resp:
+        assert resp.status_code == 200
+        print("       -> Work 空 body 更新 [OK]")
+
+# Rating boundary values (0 and 10)
+if anime_work_id:
+    resp = test("Work rating = 0", "put", f"/works/{anime_work_id}", json={"rating": 0})
+    if resp:
+        assert resp.json()["rating"] == 0
+        print("       -> rating=0 边界值 [OK]")
+
+    resp = test("Work rating = 10", "put", f"/works/{anime_work_id}", json={"rating": 10})
+    if resp:
+        assert resp.json()["rating"] == 10
+        print("       -> rating=10 边界值 [OK]")
+
+# Timeline verification - check entries exist for created actions
+resp = test("Timeline for specific work", "get", "/timeline", params={"work_id": anime_work_id})
+if resp:
+    entries = resp.json()["items"]
+    has_created = any(e["action_type"] == "created" for e in entries)
+    has_status = any(e["action_type"] == "status_change" for e in entries)
+    has_rating = any(e["action_type"] == "rating_change" for e in entries)
+    has_review = any(e["action_type"] == "review_change" for e in entries)
+    assert has_created, "Should have 'created' entry"
+    print(f"       -> Timeline: {len(entries)} entries for work #{anime_work_id} [OK]")
+    print(f"       ->   created={has_created}, status_change={has_status}, rating_change={has_rating}, review_change={has_review} [OK]")
+
+# ============================================================================
+# 23. Cleanup: Delete resources
+# ============================================================================
+section("23. Cleanup (Delete)")
 
 for aid in created_attachment_ids:
     resp = test(f"Delete attachment #{aid}", "delete", f"/attachments/{aid}")

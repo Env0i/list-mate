@@ -1,7 +1,9 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 
+from ..models.work import Category, ProgressUnit, WorkStatus
+from ..models.game_profile import GameStatus
 from .game_profile import GameProfileResponse
 from .tag import TagResponse
 
@@ -32,6 +34,32 @@ class WorkCreate(BaseModel):
     bangumi_data: Optional[str] = None
     tag_ids: list[int] = []
 
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, v: str) -> str:
+        valid = {e.value for e in Category}
+        if v not in valid:
+            raise ValueError(f"无效分类 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
+
+    @field_validator("progress_unit")
+    @classmethod
+    def validate_progress_unit(cls, v: str) -> str:
+        valid = {e.value for e in ProgressUnit}
+        if v not in valid:
+            raise ValueError(f"无效进度单位 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid = {e.value for e in WorkStatus} | {e.value for e in GameStatus}
+        if v not in valid:
+            raise ValueError(f"无效状态 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
+
 
 class WorkUpdate(BaseModel):
     title: Optional[str] = None
@@ -58,6 +86,36 @@ class WorkUpdate(BaseModel):
     priority: Optional[int] = None
     external_links: Optional[str] = None
     tag_ids: Optional[list[int]] = None
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid = {e.value for e in Category}
+        if v not in valid:
+            raise ValueError(f"无效分类 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
+
+    @field_validator("progress_unit")
+    @classmethod
+    def validate_progress_unit(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid = {e.value for e in ProgressUnit}
+        if v not in valid:
+            raise ValueError(f"无效进度单位 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        valid = {e.value for e in WorkStatus} | {e.value for e in GameStatus}
+        if v not in valid:
+            raise ValueError(f"无效状态 '{v}'，可选: {', '.join(sorted(valid))}")
+        return v
 
 
 class WorkListItem(BaseModel):
