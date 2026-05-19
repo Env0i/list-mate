@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
@@ -10,9 +11,11 @@ from ..models.work import Work, WorkStatus
 from ..models.game_profile import GameProfile, GameStatus
 from ..models.tag import Tag, WorkTag
 from ..schemas.work import WorkCreate, WorkUpdate, WorkResponse, WorkListItem, PaginatedWorks
-from .timeline import record_timeline
+from ..utils import record_timeline
 from ..schemas.game_profile import GameProfileResponse
 from ..schemas.tag import TagResponse
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["works"])
 
@@ -109,7 +112,7 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
             if resp.status_code == 200:
                 cover_data = resp.content
         except httpx.RequestError:
-            pass
+            logger.warning(f"封面下载失败: {data.title} (URL: {data.cover_url})")
 
     create_data = data.model_dump()
     tag_ids = create_data.pop("tag_ids", [])
@@ -181,7 +184,7 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
             if resp.status_code == 200:
                 update_data["cover_data"] = resp.content
         except httpx.RequestError:
-            pass
+            logger.warning(f"封面下载失败: {work.title} (URL: {update_data['cover_url']})")
 
     tag_ids = update_data.pop("tag_ids", None)
     user_set_status = "status" in update_data
@@ -300,4 +303,5 @@ def _work_to_response(work: Work) -> WorkResponse:
         updated_at=work.updated_at,
         game_profiles=[GameProfileResponse.model_validate(gp) for gp in work.game_profiles],
         tags=[TagResponse.model_validate(wt.tag) for wt in work.work_tags],
+        is_free=work.is_free,
     )

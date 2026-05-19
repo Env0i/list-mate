@@ -24,6 +24,9 @@ def upload_attachment(
         raise HTTPException(status_code=404, detail="GameProfile 不存在")
 
     data = file.file.read()
+    MAX_ATTACHMENT_SIZE = 50 * 1024 * 1024  # 50MB
+    if len(data) > MAX_ATTACHMENT_SIZE:
+        raise HTTPException(status_code=413, detail=f"文件大小不能超过 {MAX_ATTACHMENT_SIZE//(1024*1024)}MB")
     att = Attachment(
         game_profile_id=gpid,
         label=label,

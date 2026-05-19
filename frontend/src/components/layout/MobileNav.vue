@@ -36,7 +36,7 @@ const tabs = [
           </svg>
           <span v-if="tab.name" class="label">{{ tab.name }}</span>
         </router-link>
-        <router-link v-else :to="tab.path" class="fab">
+        <router-link v-else :to="tab.path" class="fab" :class="{ on: route.path === tab.path }">
           <div class="fab-bg" />
           <svg viewBox="0 0 1024 1024" fill="currentColor">
             <path d="M801.171 483.589H544V226.418c0-17.673-14.327-32-32-32s-32 14.327-32 32v257.171H222.83c-17.673 0-32 14.327-32 32s14.327 32 32 32H480v257.17c0 17.673 14.327 32 32 32s32-14.327 32-32v-257.17h257.171c17.673 0 32-14.327 32-32s-14.327-32-32-32z"/>
@@ -56,6 +56,8 @@ const tabs = [
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-top: 1px solid rgba(0,0,0,0.04);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: constant(safe-area-inset-bottom);
   z-index: 100;
 }
 @media (min-width: 768px) { .nav { display: none; } }
@@ -101,5 +103,8 @@ const tabs = [
   transition: transform 0.15s;
 }
 .fab:active .fab-bg { transform: scale(0.92); }
+.fab.on .fab-bg {
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.5), 0 0 20px rgba(255, 107, 53, 0.25);
+}
 .fab svg { position: relative; z-index: 1; width: 22px; height: 22px; }
 </style>

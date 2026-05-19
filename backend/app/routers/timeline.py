@@ -1,5 +1,4 @@
 from __future__ import annotations
-import json
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -7,27 +6,9 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models.timeline import TimelineEntry
 from ..schemas.timeline import TimelineEntryResponse, PaginatedTimeline
+from ..utils import record_timeline
 
 router = APIRouter(tags=["timeline"])
-
-
-def record_timeline(
-    db: Session,
-    work_id: int,
-    action_type: str,
-    old_value=None,
-    new_value=None,
-    game_profile_id: int | None = None,
-):
-    """Record a timeline entry. old/new values are serialized to JSON strings."""
-    entry = TimelineEntry(
-        work_id=work_id,
-        game_profile_id=game_profile_id,
-        action_type=action_type,
-        old_value=json.dumps(old_value, ensure_ascii=False) if old_value is not None else None,
-        new_value=json.dumps(new_value, ensure_ascii=False) if new_value is not None else None,
-    )
-    db.add(entry)
 
 
 @router.get("/timeline", response_model=PaginatedTimeline)

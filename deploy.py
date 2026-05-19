@@ -11,8 +11,9 @@ Zace — 全自动部署脚本
   6. 创建 Nginx 配置 (端口 8081, API 代理至 8002)
   7. 重启服务
 """
-import os, sys
+import os, sys, time
 import paramiko
+import httpx
 
 # ─── 配置 ────────────────────────────────────────────────────
 HOST = "47.108.188.175"
@@ -122,11 +123,11 @@ def setup_server(client):
     print("=" * 50)
     print("5/6  服务器安装依赖...")
 
-    # 创建 venv（如果没有），用 python3.8 确保兼容
+    # 创建 venv（如果没有），用 python3 确保兼容
     cmd = f"""
     if [ ! -d "{REMOTE_VENV}" ]; then
-        python3.8 -m venv {REMOTE_VENV}
-        echo "  venv created with python3.8"
+        python3 -m venv {REMOTE_VENV}
+        echo "  venv created with python3"
     else
         echo "  venv already exists"
     fi
@@ -160,6 +161,9 @@ def setup_configs(client):
         try_files $uri $uri/ /index.html;
         expires -1;
         add_header Cache-Control "no-cache, must-revalidate";
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     }
 
     location /api/ {
@@ -208,6 +212,18 @@ WantedBy=multi-user.target
     _run(client, "systemctl enable zace.service")
     _run(client, "systemctl restart zace.service")
     _run(client, "nginx -s reload")
+    print("  健康检查...")
+    for i in range(12):  # retry for up to 60 seconds
+        time.sleep(5)
+        try:
+            resp = httpx.get("http://127.0.0.1:8002/api/works?page_size=1", timeout=3)
+            if resp.status_code == 200:
+                print("  ✓ API 健康检查通过")
+                break
+        except Exception:
+            pass
+        if i == 11:
+            print("  ⚠ API 健康检查未通过，请检查服务状态")
     print("  服务已重启")
 
 

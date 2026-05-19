@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, field_validator
 from typing import Optional
 
-from ..models.work import Category, ProgressUnit, WorkStatus
+from ..models.work import Category, CoverSource, ProgressUnit, WorkStatus
 from ..models.game_profile import GameStatus
 from .game_profile import GameProfileResponse
 from .tag import TagResponse
@@ -75,7 +75,7 @@ class WorkUpdate(BaseModel):
     review: Optional[str] = None
     bangumi_id: Optional[int] = None
     cover_url: Optional[str] = None
-    cover_source: Optional[str] = None
+    cover_source: Optional[CoverSource] = None
     summary: Optional[str] = None
     start_date: Optional[str] = None
     finish_date: Optional[str] = None

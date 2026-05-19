@@ -132,10 +132,9 @@ input:focus, textarea:focus, select:focus {
   100% { transform: rotate(3deg) scale(1); opacity: 1; }
 }
 
-/* Holo sweep on hover */
-@keyframes holo-sweep {
-  0%   { transform: translateX(-120%) skewX(-12deg); }
-  100% { transform: translateX(120%) skewX(-12deg); }
+/* ======== iOS safe area ======== */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  body { padding-bottom: env(safe-area-inset-bottom); }
 }
 
 /* ======== Mobile: Sticky top-bar (pages with back button) ======== */

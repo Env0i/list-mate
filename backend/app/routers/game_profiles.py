@@ -5,7 +5,7 @@ from ..database import get_db
 from ..models.work import Work
 from ..models.game_profile import GameProfile, GameStatus, ProgressType
 from ..schemas.game_profile import GameProfileCreate, GameProfileUpdate, GameProfileResponse
-from .timeline import record_timeline
+from ..utils import record_timeline
 
 router = APIRouter(tags=["game-profiles"])
 

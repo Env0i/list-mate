@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models.tag import Tag
+from ..models.tag import Tag, WorkTag
 from ..schemas.tag import TagCreate, TagUpdate, TagResponse
 
 router = APIRouter(tags=["tags"])
@@ -46,5 +46,6 @@ def delete_tag(tag_id: int, db: Session = Depends(get_db)):
     tag = db.query(Tag).get(tag_id)
     if not tag:
         raise HTTPException(status_code=404, detail="标签不存在")
+    db.query(WorkTag).filter(WorkTag.tag_id == tag_id).delete()
     db.delete(tag)
     db.commit()

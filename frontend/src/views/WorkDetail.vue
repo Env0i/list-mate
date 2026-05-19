@@ -161,9 +161,31 @@ function closeEdit() {
 async function saveEdit() {
   saving.value = true
   try {
-    const payload = { ...form.value, tag_ids: selectedTagIds.value }
-    await worksApi.update(route.params.id, payload)
-    work.value = { ...work.value, ...form.value }
+    const payload = {
+      title: form.value.title,
+      category: form.value.category,
+      sub_category: form.value.sub_category,
+      status: form.value.status,
+      progress_unit: form.value.progress_unit,
+      total: form.value.total,
+      progress_value: form.value.progress_value,
+      summary: form.value.summary,
+      rating: form.value.rating,
+      review: form.value.review,
+      platform: form.value.platform,
+      purchase_platform: form.value.purchase_platform,
+      purchase_price: form.value.purchase_price,
+      purchase_date: form.value.purchase_date,
+      playtime_hours: form.value.playtime_hours,
+      start_date: form.value.start_date,
+      finish_date: form.value.finish_date,
+      priority: form.value.priority,
+      is_free: form.value.is_free,
+      external_url: form.value.external_url,
+      tag_ids: selectedTagIds.value,
+    }
+    const res = await worksApi.update(route.params.id, payload)
+    work.value = { ...work.value, ...res.data }
     // 游戏作品状态在 GameProfile 上，同步到本地显示
     if (work.value.category === 'game' && work.value.game_profiles?.length) {
       work.value.game_profiles[0].status = form.value.status
@@ -1126,7 +1148,7 @@ onMounted(load)
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 200;
   display: flex;
   align-items: flex-start;
   justify-content: center;

@@ -83,7 +83,7 @@ const filtered = computed(() =>
     if (activeCat.value !== 'all' && w.category !== activeCat.value) return false
     if (activeSt.value !== 'all' && workStatus(w) !== activeSt.value) return false
     if (activeTagId.value && !(w.tag_ids || []).includes(activeTagId.value)) return false
-    if (q.value && !w.title.includes(q.value)) return false
+    if (q.value && !w.title.toLowerCase().includes(q.value.toLowerCase())) return false
     return true
   })
 )
@@ -158,7 +158,7 @@ function catStyle(c) {
       <!-- Grid -->
       <div v-if="loading" class="loading">加载中...</div>
       <div v-else-if="filtered.length" class="grid">
-        <div v-for="(w, i) in filtered" :key="w.id" :style="{ animationDelay: (i % 12) * 0.04 + 's' }" @click="router.push(`/works/${w.id}`)">
+        <div v-for="(w, i) in filtered" :key="w.id" :style="{ animationDelay: (i % 12) * 0.04 + 's' }" @click="router.push(`/works/${w.id}`)" @keydown.enter="router.push(`/works/${w.id}`)" @keydown.space.prevent="router.push(`/works/${w.id}`)" role="button" tabindex="0">
           <WorkCardGrid :work="w" />
         </div>
       </div>
