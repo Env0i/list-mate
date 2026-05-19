@@ -4,6 +4,8 @@ __pycache__/
 *.egg-info/
 dist/
 *.db
+*.db-shm
+*.db-wal
 backend/.env
 
 # Node
@@ -22,3 +24,17 @@ Thumbs.db
 # Environment
 .env
 *.pem
+
+# Logs
+*.log
+
+# Claude
+.claude/
+
+# Generated reports
+api_test_report.json
+bench_results.json
+
+# Benchmark / review
+bench_api.py
+review_*.md
