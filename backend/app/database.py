@@ -1,10 +1,21 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from .config import DATABASE_PATH
 
 engine = create_engine(f"sqlite:///{DATABASE_PATH}", echo=False)
 SessionLocal = sessionmaker(bind=engine)
+
+
+@event.listens_for(engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.fetchall()
+    cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.execute("PRAGMA cache_size=-8000")
+    cursor.close()
 
 
 class Base(DeclarativeBase):
@@ -41,6 +52,26 @@ def init_db():
     with engine.connect() as conn:
         conn.exec_driver_sql("UPDATE works SET is_free = 0 WHERE is_free IS NULL")
         conn.commit()
+
+    # Indexes for foreign keys and common filters
+    def add_index(table, col):
+        name = f"idx_{table}_{col}"
+        with engine.connect() as conn:
+            conn.exec_driver_sql(
+                f"CREATE INDEX IF NOT EXISTS {name} ON {table}({col})"
+            )
+            conn.commit()
+
+    add_index("game_profiles", "work_id")
+    add_index("work_tags", "work_id")
+    add_index("work_tags", "tag_id")
+    add_index("timeline_entries", "work_id")
+    add_index("attachments", "game_profile_id")
+    add_index("works", "updated_at")
+    add_index("works", "category")
+    add_index("works", "status")
+    add_index("game_profiles", "status")
+    add_index("timeline_entries", "created_at")
 
     # GameProfile 扩展字段
     add_col("game_profiles", "progress_type", "VARCHAR")

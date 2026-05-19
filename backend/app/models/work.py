@@ -81,3 +81,4 @@ class Work(Base):
 
     game_profiles = relationship("GameProfile", back_populates="work", cascade="all, delete-orphan")
     work_tags = relationship("WorkTag", back_populates="work", cascade="all, delete-orphan")
+    timeline_entries = relationship("TimelineEntry", cascade="all, delete-orphan", passive_deletes=True)

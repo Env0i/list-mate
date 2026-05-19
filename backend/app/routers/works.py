@@ -30,7 +30,10 @@ def list_works(
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Work).options(selectinload(Work.game_profiles))
+    query = db.query(Work).options(
+        selectinload(Work.game_profiles),
+        selectinload(Work.work_tags),
+    )
 
     if category:
         query = query.filter(Work.category == category)
@@ -157,7 +160,10 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
 
 @router.get("/works/{work_id}", response_model=WorkResponse)
 def get_work(work_id: int, db: Session = Depends(get_db)):
-    work = db.query(Work).get(work_id)
+    work = db.query(Work).options(
+        selectinload(Work.game_profiles),
+        selectinload(Work.work_tags),
+    ).get(work_id)
     if not work:
         raise HTTPException(status_code=404, detail="作品不存在")
     return _work_to_response(work)
@@ -165,7 +171,10 @@ def get_work(work_id: int, db: Session = Depends(get_db)):
 
 @router.put("/works/{work_id}", response_model=WorkResponse)
 def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
-    work = db.query(Work).get(work_id)
+    work = db.query(Work).options(
+        selectinload(Work.game_profiles),
+        selectinload(Work.work_tags),
+    ).get(work_id)
     if not work:
         raise HTTPException(status_code=404, detail="作品不存在")
 
@@ -212,9 +221,9 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
     # Sync tags if provided
     if tag_ids is not None:
         db.query(WorkTag).filter(WorkTag.work_id == work.id).delete()
+        existing = {t.id for t in db.query(Tag).filter(Tag.id.in_(tag_ids)).all()}
         for tid in tag_ids:
-            tag = db.query(Tag).get(tid)
-            if tag:
+            if tid in existing:
                 db.add(WorkTag(work_id=work.id, tag_id=tid))
 
     # 自动标记完成（仅非游戏作品）

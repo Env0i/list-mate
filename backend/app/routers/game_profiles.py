@@ -10,6 +10,14 @@ from ..utils import record_timeline
 router = APIRouter(tags=["game-profiles"])
 
 
+@router.get("/works/{work_id}/game-profiles", response_model=list[GameProfileResponse])
+def list_game_profiles(work_id: int, db: Session = Depends(get_db)):
+    work = db.query(Work).get(work_id)
+    if not work:
+        raise HTTPException(status_code=404, detail="作品不存在")
+    return db.query(GameProfile).filter(GameProfile.work_id == work_id).all()
+
+
 @router.post("/works/{work_id}/game-profiles", response_model=GameProfileResponse, status_code=201)
 def create_game_profile(work_id: int, data: GameProfileCreate, db: Session = Depends(get_db)):
     work = db.query(Work).get(work_id)

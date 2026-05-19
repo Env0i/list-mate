@@ -1,0 +1,319 @@
+{
+  "summary": {
+    "total": 77,
+    "passed": 77,
+    "failed": 0,
+    "date": "2026-05-19",
+    "base_url": "http://localhost:8001/api"
+  },
+  "tests": [
+    {
+      "name": "List works",
+      "status": "pass"
+    },
+    {
+      "name": "Pagination (page_size=2, page=1)",
+      "status": "pass"
+    },
+    {
+      "name": "Category filter - anime",
+      "status": "pass"
+    },
+    {
+      "name": "Category filter - game",
+      "status": "pass"
+    },
+    {
+      "name": "Category filter - novel",
+      "status": "pass"
+    },
+    {
+      "name": "Category filter - comic",
+      "status": "pass"
+    },
+    {
+      "name": "Status filter (completed)",
+      "status": "pass"
+    },
+    {
+      "name": "Search (q=a)",
+      "status": "pass"
+    },
+    {
+      "name": "Invalid category returns empty",
+      "status": "pass"
+    },
+    {
+      "name": "Large page_size (999)",
+      "status": "pass"
+    },
+    {
+      "name": "Empty search returns empty",
+      "status": "pass"
+    },
+    {
+      "name": "Get work by valid ID",
+      "status": "pass"
+    },
+    {
+      "name": "Get work by invalid ID (999999)",
+      "status": "pass"
+    },
+    {
+      "name": "Get work by negative ID (-1)",
+      "status": "pass"
+    },
+    {
+      "name": "Create anime work",
+      "status": "pass"
+    },
+    {
+      "name": "Create novel work",
+      "status": "pass"
+    },
+    {
+      "name": "Create comic work",
+      "status": "pass"
+    },
+    {
+      "name": "Create game work (auto GP)",
+      "status": "pass"
+    },
+    {
+      "name": "Invalid category -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Invalid progress_unit -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Invalid status -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Empty title string",
+      "status": "pass"
+    },
+    {
+      "name": "Minimal work (required only)",
+      "status": "pass"
+    },
+    {
+      "name": "Create work with tags",
+      "status": "pass"
+    },
+    {
+      "name": "Update title",
+      "status": "pass"
+    },
+    {
+      "name": "Update rating",
+      "status": "pass"
+    },
+    {
+      "name": "Update status",
+      "status": "pass"
+    },
+    {
+      "name": "Partial update (single field)",
+      "status": "pass"
+    },
+    {
+      "name": "Invalid work ID -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "Invalid status -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Update game work status",
+      "status": "pass"
+    },
+    {
+      "name": "Clear nullable fields (None)",
+      "status": "pass"
+    },
+    {
+      "name": "Delete work and verify",
+      "status": "pass"
+    },
+    {
+      "name": "Delete non-existent work -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "Delete game work cascade",
+      "status": "pass"
+    },
+    {
+      "name": "List game profiles for game",
+      "status": "pass"
+    },
+    {
+      "name": "List game profiles for non-game (empty)",
+      "status": "pass"
+    },
+    {
+      "name": "List game profiles for invalid work -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "Create game profile",
+      "status": "pass"
+    },
+    {
+      "name": "Create GP for invalid work -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "Create GP for non-game work -> 400",
+      "status": "pass"
+    },
+    {
+      "name": "Create GP with invalid status -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Create GP with invalid progress_type -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Get game profile detail",
+      "status": "pass"
+    },
+    {
+      "name": "Get non-existent GP -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "Update game profile",
+      "status": "pass"
+    },
+    {
+      "name": "Update GP status",
+      "status": "pass"
+    },
+    {
+      "name": "Update GP progress",
+      "status": "pass"
+    },
+    {
+      "name": "Update non-existent GP -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "Update GP with invalid status -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Delete game profile and verify",
+      "status": "pass"
+    },
+    {
+      "name": "Delete non-existent GP -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "List tags",
+      "status": "pass"
+    },
+    {
+      "name": "Create tag",
+      "status": "pass"
+    },
+    {
+      "name": "Create duplicate tag -> 409",
+      "status": "pass"
+    },
+    {
+      "name": "Create tag with default color",
+      "status": "pass"
+    },
+    {
+      "name": "Update tag (name+color)",
+      "status": "pass"
+    },
+    {
+      "name": "Partial update tag (color only)",
+      "status": "pass"
+    },
+    {
+      "name": "Update non-existent tag -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "Delete tag (with WorkTag cleanup)",
+      "status": "pass"
+    },
+    {
+      "name": "Delete non-existent tag -> 404",
+      "status": "pass"
+    },
+    {
+      "name": "Get tags from work detail",
+      "status": "pass"
+    },
+    {
+      "name": "Associate tags with work",
+      "status": "pass"
+    },
+    {
+      "name": "Remove tag from work",
+      "status": "pass"
+    },
+    {
+      "name": "Get statistics",
+      "status": "pass"
+    },
+    {
+      "name": "Get timeline entries",
+      "status": "pass"
+    },
+    {
+      "name": "Timeline pagination",
+      "status": "pass"
+    },
+    {
+      "name": "Timeline filter by work_id",
+      "status": "pass"
+    },
+    {
+      "name": "Search Bangumi (Steins;Gate)",
+      "status": "pass"
+    },
+    {
+      "name": "Bangumi search with no query -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Bangumi search with empty query -> 422",
+      "status": "pass"
+    },
+    {
+      "name": "Bangumi search with type filter",
+      "status": "pass"
+    },
+    {
+      "name": "Very long title (500 chars)",
+      "status": "pass"
+    },
+    {
+      "name": "Create work with all fields filled",
+      "status": "pass"
+    },
+    {
+      "name": "Tag cascade cleanup on delete",
+      "status": "pass"
+    },
+    {
+      "name": "Export endpoint",
+      "status": "pass"
+    },
+    {
+      "name": "Root/docs endpoint",
+      "status": "pass"
+    }
+  ]
+}

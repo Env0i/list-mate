@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from sqlalchemy.orm import selectinload
 from ..database import get_db
 from ..models.work import Work
 from ..models.tag import Tag, WorkTag
@@ -16,7 +17,10 @@ router = APIRouter(tags=["export"])
 
 @router.get("/export/json")
 def export_json(db: Session = Depends(get_db)):
-    works = db.query(Work).order_by(Work.created_at.desc()).all()
+    works = db.query(Work).options(
+        selectinload(Work.game_profiles),
+        selectinload(Work.work_tags).selectinload(WorkTag.tag),
+    ).order_by(Work.created_at.desc()).all()
     result = []
     for w in works:
         tags = [wt.tag.name for wt in w.work_tags]
@@ -71,7 +75,9 @@ def export_json(db: Session = Depends(get_db)):
 
 @router.get("/export/csv")
 def export_csv(db: Session = Depends(get_db)):
-    works = db.query(Work).order_by(Work.created_at.desc()).all()
+    works = db.query(Work).options(
+        selectinload(Work.work_tags).selectinload(WorkTag.tag),
+    ).order_by(Work.created_at.desc()).all()
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
