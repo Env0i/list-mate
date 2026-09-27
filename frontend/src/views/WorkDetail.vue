@@ -1238,7 +1238,7 @@ onMounted(load)
   gap: 20px 28px;
   align-items: start;
 }
-@media (max-width: 700px) {
+@media (max-width: 767px) {
   .modal-grid { grid-template-columns: 1fr; }
   .mf-row { flex-wrap: wrap; }
   .mf-sm { min-width: 0; flex: 1 1 100%; }

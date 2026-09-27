@@ -445,7 +445,7 @@ onMounted(load)
     var(--shadow-md);
   position: relative;
 }
-@media (max-width: 639px) { .detail-card { padding: 20px; } }
+@media (max-width: 767px) { .detail-card { padding: 20px; } }
 @media (max-width: 480px) {
   .detail-card { padding: 16px; }
   .top-bar { flex-wrap: wrap; gap: 8px; }

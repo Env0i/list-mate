@@ -34,6 +34,7 @@ python api_full_test.py
 ## 关键约定（细节见 CLAUDE.md）
 
 - API 前缀 `/api`；`<768px` 手机（底部 Tab），`>=768px` 桌面（TopBar）
+- 断点规范：主断点 `767/768`，小屏档 `480`；`640/900/960/1200` 仅用于网格列数阶梯，不再新增其他断点
 - 视觉风格：抽卡图鉴/集换式卡牌——暖白纸背景 #F7F5F0、品类色辉光、全息闪光 hover、EXP 条、印章状态戳、发牌入场动画
 - 状态枚举：动漫/小说/漫画 `wish/watching/completed/paused/dropped`；游戏 `wish/playing/completed/dropped/wait_buy/wait_sale`
 - 进度单位：anime→ep、novel→chapter、comic→volume、game→percent；`progress >= total(>0)` 自动 completed（可手动覆盖）

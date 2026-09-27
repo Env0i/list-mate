@@ -264,7 +264,7 @@ async function submit() {
     0 0 0 2px rgba(255,255,255,0.5),
     var(--shadow-md);
 }
-@media (max-width: 639px) { .add-card { padding: 20px; } }
+@media (max-width: 767px) { .add-card { padding: 20px; } }
 
 .section { margin-bottom: 24px; }
 .section-title {
