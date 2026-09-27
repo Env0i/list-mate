@@ -10,6 +10,7 @@ class BangumiSearchResult(BaseModel):
     summary: str
     image_url: Optional[str] = None
     type: int
+    date: Optional[str] = None
 
 
 class BangumiSearchResponse(BaseModel):

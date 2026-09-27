@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { bangumiApi, worksApi } from '../api/client'
 import { emptyToNull } from '../utils/payload'
@@ -28,6 +28,11 @@ const typeLabels = [
 
 const typeToCategory = { 1: 'novel', 2: 'anime', 4: 'game', default: 'anime' }
 const defaultProgressUnit = { anime: 'ep', novel: 'chapter', game: 'percent', comic: 'volume' }
+
+// 切换类型时实时重新筛选（已有关键词时），无需手动再点搜索
+watch(activeType, () => {
+  if (q.value.trim()) search()
+})
 
 async function search() {
   if (!q.value.trim()) return
@@ -173,6 +178,10 @@ function itemId(item) {
             </div>
           </div>
           <span class="rc-title">{{ itemTitle(item) }}</span>
+          <div class="rc-meta">
+            <span class="rc-type" :class="'rt-' + item.type">{{ typeLabels.find(t => t.key === String(item.type))?.label || '其他' }}</span>
+            <span v-if="item.date" class="rc-date">{{ item.date.slice(0, 4) }}</span>
+          </div>
         </div>
       </div>
 
@@ -357,7 +366,7 @@ function itemId(item) {
 .rc-placeholder { color: var(--text-tertiary); opacity: 0.2; }
 .rc-title {
   display: block;
-  padding: 10px 12px;
+  padding: 10px 12px 4px;
   font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-secondary);
@@ -365,6 +374,23 @@ function itemId(item) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.rc-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 10px;
+}
+.rc-type {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--bg-input);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.rt-2 { color: var(--c-anime); }
+.rt-4 { color: var(--c-game); }
+.rc-date { font-size: 10px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 
 .empty { text-align: center; padding: 60px 20px; color: var(--text-tertiary); }
 

@@ -947,6 +947,7 @@ def test_bangumi_search():
     data = r.json()
     assert_key(data, "results")
     assert_key(data, "total")
+    assert_key(data["results"][0], "date")
     assert_isinstance(data["results"], list)
 
 

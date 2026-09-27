@@ -42,6 +42,7 @@ def search_bangumi(
             summary=item.get("summary", ""),
             image_url=item.get("images", {}).get("medium"),
             type=item.get("type", 0),
+            date=item.get("date"),
         )
         for item in data.get("data", [])
     ]
