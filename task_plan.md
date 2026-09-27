@@ -347,3 +347,13 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] 保留项：Add/WorkDetail 的 white 为开关圆点（语义正确）；详情页封面白边为卡牌母题
 - [x] 验证：api_full_test 79/79、build 通过、修复前后 fill/label 断言
 - **Status:** complete
+
+## 第二十一轮: GP 详情页快捷进度即时化 ✅ (2026-09-27)
+
+- [x] GameProfileDetail 的 ±1 从"改本地值+保存"两步改为即时提交（与列表卡 ±1 对齐）：
+      percent +5 / count +1，none 型禁用；到 100% 触发后端自动完成
+- [x] 自动完成后的 −1 随回退恢复"进行中"（payload.status=playing），
+      originalStatus 同步避免后续保存误提交旧状态
+- [x] 验证：浏览器全链路——20%→+1→25%→连点→100%（自动"通关"）→−1→95%（回退"在玩"），
+      API 断言 status/auto_completed 联动；数据清理
+- **Status:** complete

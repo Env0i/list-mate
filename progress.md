@@ -344,3 +344,11 @@ GameProfile 上且列表响应不含 GP id——表现为"游戏卡点了没反�
 
 ### 保留项（非问题）
 Add/WorkDetail 的 background: white 是 toggle 开关圆点；详情页封面白边是卡牌母题。
+
+## 2026-09-27 自主接管第二十一轮：GP 详情 ±1 即时化
+
+- 与 R15 的列表卡 ±1 行为对齐：GP 详情页步进按钮从"改本地等保存"改为即时 API 提交
+- 步长按 progress_type（percent +5 / count +1 / none 禁用）；originalStatus 随响应同步，
+  避免自动完成改状态后用户保存时误提交旧状态
+- 过程插曲：造数据时 GP progress_type 默认为 none（_guess_progress_type 对"本体"返回 NONE）
+  导致按钮按设计隐藏——修正测试数据为 percent 后重测

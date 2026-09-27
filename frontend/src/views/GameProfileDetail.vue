@@ -109,14 +109,32 @@ function setProgressType(pt) {
   else if (gp.value.progress_value == null) gp.value.progress_value = 0
 }
 
-function increment() {
-  if (!gp.value) return
-  gp.value.progress_value = (gp.value.progress_value || 0) + 1
-}
+// 快捷进度即时提交（与列表卡 ±1 对齐）：percent +5 / count +1，
+// 到 100% 触发后端自动完成；自动完成后的 −1 随回退恢复"进行中"
+const stepping = ref(false)
 
-function decrement() {
-  if (!gp.value || !gp.value.progress_value) return
-  gp.value.progress_value = Math.max(0, gp.value.progress_value - 1)
+async function stepProgress(dir) {
+  if (!gp.value || stepping.value) return
+  const pt = gp.value.progress_type || 'none'
+  if (pt === 'none') return
+  const step = pt === 'percent' ? 5 : 1
+  const cur = gp.value.progress_value ?? 0
+  let next = Math.max(0, cur + dir * step)
+  if (pt === 'percent') next = Math.min(100, next)
+  if (next === cur) return
+  stepping.value = true
+  try {
+    const payload = { progress_value: next }
+    if (dir < 0 && gp.value.auto_completed) payload.status = 'playing'
+    const { data } = await gameProfilesApi.update(route.params.gpid, payload)
+    gp.value = data
+    originalStatus.value = data.status
+  } catch (e) {
+    console.error('GP step failed', e)
+    showToast('进度更新失败', 'error')
+  } finally {
+    stepping.value = false
+  }
 }
 
 function addMods() {
@@ -248,7 +266,7 @@ onMounted(load)
           </div>
 
           <div v-if="(gp.progress_type || 'none') !== 'none'" class="progress-row">
-            <button class="step-btn" @click="decrement" :disabled="!gp.progress_value">
+            <button class="step-btn" @click="stepProgress(-1)" :disabled="stepping || !gp.progress_value">
               <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
                 <path fill-rule="evenodd" d="M4 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H4.75A.75.75 0 014 10z" clip-rule="evenodd"/>
               </svg>
@@ -260,7 +278,7 @@ onMounted(load)
               class="progress-inp"
               :placeholder="(gp.progress_type || 'none') === 'percent' ? '0' : '0'"
             />
-            <button class="step-btn" @click="increment">
+            <button class="step-btn" @click="stepProgress(1)" :disabled="stepping || (gp.progress_type || 'none') === 'none'">
               <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
                 <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
               </svg>
