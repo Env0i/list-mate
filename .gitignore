@@ -38,3 +38,6 @@ bench_results.json
 # Benchmark / review
 bench_api.py
 review_*.md
+
+# ZCode 本地工具缓存
+datacachepip/
