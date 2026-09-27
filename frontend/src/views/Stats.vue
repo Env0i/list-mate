@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { statsApi, timelineApi } from '../api/client'
 import { exportApi } from '../api/client'
+import { showToast } from '../utils/toast'
 import { STATUS_LABELS_FLAT, STATUS_COLORS } from '../constants/work'
 import { actionLabels, actionIcons, formatValue, timeAgo } from '../utils/timeline'
 
@@ -10,6 +11,31 @@ const timeline = ref([])
 const loading = ref(true)
 const timelineLoading = ref(true)
 const activeTab = ref('overview')
+const restoreInput = ref(null)
+const restoring = ref(false)
+
+function pickRestore() { restoreInput.value?.click() }
+
+async function onRestoreFile(e) {
+  const file = e.target.files?.[0]
+  e.target.value = ''
+  if (!file) return
+  const ok = confirm(`将用「${file.name}」覆盖当前全部数据。
+覆盖前当前数据会先自动备份到服务器 backups/ 目录。
+确定还原？`)
+  if (!ok) return
+  restoring.value = true
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const { data } = await exportApi.restore(fd)
+    showToast(data.message || '还原成功，请重启服务后刷新', 'success')
+  } catch (err) {
+    showToast(err.response?.data?.detail || '还原失败', 'error')
+  } finally {
+    restoring.value = false
+  }
+}
 
 onMounted(async () => {
   try {
@@ -120,6 +146,24 @@ function ratingRank(rating) {
             </svg>
             <span class="export-label">备份</span>
           </a>
+          <input
+            ref="restoreInput"
+            type="file"
+            accept=".db,application/octet-stream"
+            class="restore-input"
+            @change="onRestoreFile"
+          />
+          <button
+            class="export-btn"
+            :disabled="restoring"
+            title="从 .db 备份还原（覆盖当前数据，当前数据会先自动备份）"
+            @click="pickRestore"
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+              <path fill-rule="evenodd" d="M3.5 4.75A2.25 2.25 0 015.75 2.5h5.5a.75.75 0 01.53.22l4 4a.75.75 0 01.22.53v8.5a2.25 2.25 0 01-2.25 2.25h-8.5A2.25 2.25 0 013.5 15.75v-11zm6.75 3.75a.75.75 0 00-1.5 0v3.69l-.97-.97a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l2.25-2.25a.75.75 0 00-1.06-1.06l-.97.97V8.5z" clip-rule="evenodd"/>
+            </svg>
+            <span class="export-label">{{ restoring ? '还原中...' : '还原' }}</span>
+          </button>
         </div>
       </div>
 
@@ -407,6 +451,9 @@ function ratingRank(rating) {
   box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .tab-icon { font-size: 1em; }
+
+.restore-input { display: none; }
+.export-btn:disabled { opacity: 0.55; cursor: default; }
 
 /* Quick chips */
 .quick-chips {

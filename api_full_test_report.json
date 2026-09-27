@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 78,
-    "passed": 78,
+    "total": 79,
+    "passed": 79,
     "failed": 0,
     "date": "2026-09-27",
     "base_url": "http://localhost:8001/api"
@@ -313,6 +313,10 @@
     },
     {
       "name": "Backup endpoint (SQLite snapshot)",
+      "status": "pass"
+    },
+    {
+      "name": "Restore roundtrip (backup -> restore)",
       "status": "pass"
     },
     {

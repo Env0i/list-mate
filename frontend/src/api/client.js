@@ -56,6 +56,7 @@ export const exportApi = {
   jsonUrl() { return '/api/export/json' },
   csvUrl() { return '/api/export/csv' },
   backupUrl() { return '/api/backup' },
+  restore(formData) { return client.post('/restore', formData) },
 }
 
 export const coverApi = {

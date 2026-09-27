@@ -266,3 +266,12 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] WorkDetail stamp-in 关键帧分叉归一（删除本地 2deg 版本，统一全局 3deg；元素静止角 2deg 不变）
 - [x] 验证：build 通过；375px 标签页/FAB 截图无回归
 - **Status:** complete
+
+## 第十二轮: 从备份还原（备份闭环）✅ (2026-09-27)
+
+- [x] POST /api/restore：上传 .db → 校验 SQLite 文件头 + 必需表结构 → 当前库自动快照到
+      backups/pre-restore-<时间戳>.db → 替换库文件 + 清理 WAL/SHM + engine.dispose
+- [x] Stats 页"还原"按钮：file input + confirm 二次确认（提示自动备份兜底）+ 还原中禁用态
+- [x] 测试：还原闭环（备份→还原→数据不丢）+ 非法文件 400；78 条用例全绿
+- [x] 用户确认暂不真实部署，部署留给用户自行执行
+- **Status:** complete

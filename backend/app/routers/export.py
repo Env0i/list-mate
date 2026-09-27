@@ -2,17 +2,19 @@ import csv
 import io
 import json
 import os
+import shutil
 import sqlite3
 import tempfile
+from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.orm import Session
 from starlette.background import BackgroundTask
 
 from sqlalchemy.orm import selectinload
 from ..config import DATABASE_PATH
-from ..database import get_db
+from ..database import engine, get_db
 from ..models.work import Work
 from ..models.tag import Tag, WorkTag
 from ..models.game_profile import GameProfile, GameStatus
@@ -40,6 +42,65 @@ def backup_database():
         filename="zace-backup.db",
         background=BackgroundTask(os.remove, tmp_path),
     )
+
+
+REQUIRED_TABLES = ("works", "game_profiles", "timeline_entries", "tags", "work_tags", "attachments")
+
+
+@router.post("/restore")
+def restore_database(file: UploadFile = File(...)):
+    """从 .db 备份文件还原数据库（覆盖式）。
+
+    流程：校验上传文件为合法 SQLite 且表结构齐全 → 当前库先自动备份到
+    backups/<时间戳>.db → 替换库文件并清理 WAL/SHM → 释放连接池（新请求
+    即读新库）。替换是覆盖式的，务必依赖还原前的自动备份兜底。"""
+    raw = file.file.read()
+
+    # 1. 必须是 SQLite 文件
+    if raw[:16] != b"SQLite format 3\x00":
+        raise HTTPException(status_code=400, detail="备份文件不是有效的 SQLite 数据库")
+
+    # 2. 落到临时文件，校验表结构齐全
+    fd, tmp_path = tempfile.mkstemp(suffix=".db")
+    with os.fdopen(fd, "wb") as f:
+        f.write(raw)
+    try:
+        check = sqlite3.connect(tmp_path)
+        tables = {row[0] for row in check.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'")}
+        check.close()
+        missing = [t for t in REQUIRED_TABLES if t not in tables]
+        if missing:
+            os.remove(tmp_path)
+            raise HTTPException(
+                status_code=400,
+                detail=f"备份缺少必需的数据表: {', '.join(missing)}")
+    except HTTPException:
+        raise
+    except sqlite3.DatabaseError:
+        os.remove(tmp_path)
+        raise HTTPException(status_code=400, detail="备份文件已损坏，无法读取")
+
+    # 3. 还原前把当前库快照到服务器 backups/ 目录
+    backup_dir = os.path.join(os.path.dirname(str(DATABASE_PATH)), "backups")
+    os.makedirs(backup_dir, exist_ok=True)
+    snapshot = os.path.join(backup_dir, f"pre-restore-{datetime.now().strftime('%Y%m%d-%H%M%S')}.db")
+    src = sqlite3.connect(str(DATABASE_PATH))
+    keep = sqlite3.connect(snapshot)
+    with keep:
+        src.backup(keep)
+    keep.close()
+    src.close()
+
+    # 4. 替换库文件（清掉 WAL/SHM 残留），释放连接池让新请求读新库
+    engine.dispose()
+    os.replace(tmp_path, str(DATABASE_PATH))
+    for suffix in ("-wal", "-shm"):
+        side = str(DATABASE_PATH) + suffix
+        if os.path.exists(side):
+            os.remove(side)
+
+    return {"message": "还原成功，当前数据已自动备份为 " + os.path.basename(snapshot)}
 
 
 @router.get("/export/json")

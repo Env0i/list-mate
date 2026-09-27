@@ -1063,6 +1063,22 @@ def test_backup_endpoint():
     assert b"timeline_entries" in r.content, "备份缺少 timeline_entries 表"
 
 
+def test_restore_roundtrip():
+    """备份→还原闭环：上传当前备份应成功且数据不丢；非法文件应 400。"""
+    r = client.get("/backup")
+    assert_status(r, 200)
+    files = {"file": ("zace-backup.db", r.content, "application/octet-stream")}
+    r2 = client.post("/restore", files=files)
+    assert_status(r2, 200)
+    assert "还原成功" in r2.json()["message"]
+    # 还原后数据仍在
+    r3 = client.get("/works", params={"page_size": 1})
+    assert_status(r3, 200)
+    # 非法文件拒绝
+    bad = client.post("/restore", files={"file": ("bad.db", b"not a sqlite file", "application/octet-stream")})
+    assert_status(bad, 400)
+
+
 def test_root_endpoint():
     """Check root docs are accessible."""
     r = client.get("/docs")
@@ -1233,6 +1249,7 @@ def main():
     test("Tag cascade cleanup on delete", test_tag_cascade_cleanup)
     test("Export endpoint", test_export_endpoint)
     test("Backup endpoint (SQLite snapshot)", test_backup_endpoint)
+    test("Restore roundtrip (backup -> restore)", test_restore_roundtrip)
     test("Root/docs endpoint", test_root_endpoint)
 
     # ===================== Results =====================
