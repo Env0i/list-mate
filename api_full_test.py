@@ -889,6 +889,10 @@ def test_get_stats():
     assert_key(data, "week_activity")
     assert_isinstance(data["week_activity"]["operations"], int)
     assert_isinstance(data["week_activity"]["works_updated"], int)
+    assert_key(data, "monthly_activity")
+    assert_isinstance(data["monthly_activity"], list)
+    assert len(data["monthly_activity"]) == 6, "月度趋势应固定返回 6 个月"
+    assert_isinstance(data["monthly_activity"][0]["operations"], int)
     assert_isinstance(data["total_works"], int)
     assert_isinstance(data["category_counts"], list)
     assert_isinstance(data["status_counts"], list)

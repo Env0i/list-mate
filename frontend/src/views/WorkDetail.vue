@@ -22,6 +22,8 @@ const form = ref({})
 const history = ref([])
 const historyLoading = ref(true)
 const historyTotal = ref(0)
+const historyPage = ref(1)
+const historyPageSize = 20
 const allTags = ref([])
 const selectedTagIds = ref([])
 const tagLoading = ref(false)
@@ -221,14 +223,28 @@ const groupedHistory = computed(() => {
 async function loadHistory() {
   historyLoading.value = true
   try {
-    const { data } = await timelineApi.list({ work_id: route.params.id, page_size: 20 })
+    const { data } = await timelineApi.list({ work_id: route.params.id, page: 1, page_size: historyPageSize })
     history.value = data.items
     historyTotal.value = data.total
+    historyPage.value = 1
   } catch (e) {
     console.error('Failed to load history', e)
   } finally {
     historyLoading.value = false
   }
+}
+
+async function loadMoreHistory() {
+  if (history.value.length >= historyTotal.value) return
+  const { data } = await timelineApi.list({
+    work_id: route.params.id,
+    page: historyPage.value + 1,
+    page_size: historyPageSize,
+  })
+  const seen = new Set(history.value.map(e => e.id))
+  for (const e of data.items) if (!seen.has(e.id)) history.value.push(e)
+  historyTotal.value = data.total
+  historyPage.value += 1
 }
 
 onMounted(() => { load(); loadHistory() })
@@ -495,6 +511,11 @@ onMounted(() => { load(); loadHistory() })
           </template>
         </div>
         <p v-else class="history-hint">暂无记录</p>
+        <button
+          v-if="!historyLoading && history.length < historyTotal"
+          class="history-more"
+          @click="loadMoreHistory"
+        >加载更多（已显示 {{ history.length }} / {{ historyTotal }}）</button>
       </div>
 
       <!-- Game profiles section -->
@@ -1535,6 +1556,17 @@ onMounted(() => { load(); loadHistory() })
 }
 .history-count { font-size: var(--fs-xs); color: var(--text-tertiary); font-weight: 600; }
 .history-hint { font-size: var(--fs-sm); color: var(--text-tertiary); padding: 6px 0; }
+.history-more {
+  width: 100%;
+  height: 34px;
+  margin-top: 10px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+.history-more:hover { color: var(--text-secondary); border-color: var(--text-tertiary); }
 .history-list { display: flex; flex-direction: column; }
 .history-item {
   display: flex;

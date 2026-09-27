@@ -84,6 +84,18 @@ def get_stats(db: Session = Depends(get_db)):
     week_works = db.query(func.count(Work.id)).filter(
         Work.updated_at >= cutoff).scalar()
 
+    # 月度活跃趋势（最近 6 个月，含当月）：按月聚合时间线操作数
+    month_rows = db.query(
+        func.strftime("%Y-%m", TimelineEntry.created_at),
+        func.count(TimelineEntry.id),
+    ).group_by(func.strftime("%Y-%m", TimelineEntry.created_at)).all()
+    ops_by_month = {m: n for m, n in month_rows}
+    monthly_activity = []
+    now = datetime.utcnow()
+    for i in range(5, -1, -1):
+        ym = (now - timedelta(days=30 * i)).strftime("%Y-%m")
+        monthly_activity.append({"month": ym, "operations": ops_by_month.get(ym, 0)})
+
     return {
         "total_works": total_works,
         "category_counts": category_counts,
@@ -93,4 +105,5 @@ def get_stats(db: Session = Depends(get_db)):
             "operations": week_ops or 0,
             "works_updated": week_works or 0,
         },
+        "monthly_activity": monthly_activity,
     }
