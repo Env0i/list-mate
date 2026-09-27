@@ -207,6 +207,10 @@ function ratingRank(rating) {
               <span class="chip-num">{{ totalCompleted }}</span>
               <span class="chip-label">已完成</span>
             </div>
+            <div class="chip chip-week">
+              <span class="chip-num">{{ stats.week_activity?.operations ?? 0 }}</span>
+              <span class="chip-label">本周活跃</span>
+            </div>
           </div>
 
           <!-- Category badges row -->
@@ -462,8 +466,8 @@ function ratingRank(rating) {
   margin-bottom: 20px;
 }
 @media (max-width: 480px) {
-  .quick-chips { gap: 8px; }
-  .chip { padding: 10px 12px; gap: 8px; }
+  .quick-chips { gap: 8px; flex-wrap: wrap; }
+  .chip { padding: 10px 12px; gap: 8px; flex: 1 1 40%; }
 }
 .chip {
   display: flex;
@@ -492,6 +496,7 @@ function ratingRank(rating) {
   white-space: nowrap;
 }
 .chip-wish { border-left: 3px solid var(--s-watching); }
+.chip-week { border-left: 3px solid var(--primary); }
 .chip-done { border-left: 3px solid var(--s-completed); }
 
 /* Category badges */

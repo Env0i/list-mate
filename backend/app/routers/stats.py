@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -5,6 +7,7 @@ from sqlalchemy import func
 from ..database import get_db
 from ..models.work import Work, WorkStatus
 from ..models.game_profile import GameProfile
+from ..models.timeline import TimelineEntry
 
 router = APIRouter(tags=["stats"])
 
@@ -73,9 +76,21 @@ def get_stats(db: Session = Depends(get_db)):
         rating_map[key] = rating_map.get(key, 0) + n
     rating_distribution = [{"rating": k, "count": v} for k, v in rating_map.items()]
 
+    # 本周活跃（最近 7 天）：时间线操作数与有更新的作品数
+    # created_at/updated_at 均为 UTC（server_default func.now()），与 utcnow 可比
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    week_ops = db.query(func.count(TimelineEntry.id)).filter(
+        TimelineEntry.created_at >= cutoff).scalar()
+    week_works = db.query(func.count(Work.id)).filter(
+        Work.updated_at >= cutoff).scalar()
+
     return {
         "total_works": total_works,
         "category_counts": category_counts,
         "status_counts": status_counts,
         "rating_distribution": rating_distribution,
+        "week_activity": {
+            "operations": week_ops or 0,
+            "works_updated": week_works or 0,
+        },
     }
