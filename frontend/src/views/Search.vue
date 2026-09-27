@@ -34,19 +34,26 @@ watch(activeType, () => {
   if (q.value.trim()) search()
 })
 
+// 竞态守卫：每次搜索自增序号，响应返回时若已有更新的搜索则丢弃——
+// 快速切换类型/重搜时，慢的旧响应不会覆盖新结果
+let searchSeq = 0
+
 async function search() {
   if (!q.value.trim()) return
+  const seq = ++searchSeq
   searching.value = true
   error.value = ''
   try {
     const type = activeType.value === 'all' ? undefined : activeType.value
     const { data } = await bangumiApi.search(q.value.trim(), type)
+    if (seq !== searchSeq) return
     results.value = data.results || data.items || []
   } catch (e) {
+    if (seq !== searchSeq) return
     error.value = '搜索失败，请重试'
     results.value = []
   } finally {
-    searching.value = false
+    if (seq === searchSeq) searching.value = false
   }
 }
 
@@ -185,7 +192,7 @@ function itemId(item) {
         </div>
       </div>
 
-      <div v-else-if="q && !searching" class="empty">
+      <div v-else-if="q && !searching && !error" class="empty">
         没有结果，试试别的关键词
       </div>
     </div>
