@@ -247,6 +247,10 @@ async function loadMoreHistory() {
   historyPage.value += 1
 }
 
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 onMounted(() => { load(); loadHistory() })
 </script>
 
@@ -491,7 +495,15 @@ onMounted(() => { load(); loadHistory() })
       <div class="history-card" :style="{ '--cat-color': catColor }">
         <div class="tracking-header">
           <h2 class="tracking-title">历史</h2>
-          <span v-if="historyTotal" class="history-count">{{ historyTotal }} 条记录</span>
+          <div class="history-head-actions">
+            <span v-if="historyTotal" class="history-count">{{ history.length }}/{{ historyTotal }} 条</span>
+            <button
+              v-if="history.length >= historyPageSize"
+              class="history-top"
+              title="回到顶部"
+              @click="scrollToTop"
+            >↑ 顶部</button>
+          </div>
         </div>
         <div v-if="historyLoading" class="history-hint">加载中...</div>
         <div v-else-if="history.length" class="history-list">
@@ -1555,6 +1567,17 @@ onMounted(() => { load(); loadHistory() })
   border-left: 3px solid var(--cat-color);
 }
 .history-count { font-size: var(--fs-xs); color: var(--text-tertiary); font-weight: 600; }
+.history-head-actions { display: flex; align-items: center; gap: 8px; }
+.history-top {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  font-size: var(--fs-xs);
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+.history-top:hover { color: var(--text-secondary); border-color: var(--text-tertiary); }
 .history-hint { font-size: var(--fs-sm); color: var(--text-tertiary); padding: 6px 0; }
 .history-more {
   width: 100%;
