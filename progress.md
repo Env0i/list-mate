@@ -240,3 +240,10 @@
 ### 验证
 - 测试闭环：备份→还原→数据不丢、非 SQLite 文件 400；build 通过；还原按钮挂载与禁用态截图确认
 - IAB 不支持 file chooser 交互，UI 层验证到入口挂载为止（API 层由测试覆盖）
+
+## 2026-09-27 第十三轮：v1.0.0 阶段性收口
+
+- 导出/备份文件名带日期（zace-export-20260927.json / zace-backup-20260927.db），多次导出不互相覆盖；顺带修掉文件名中的旧品牌残留（list-mate→zace）
+- 全量回归：api_full_test 78/78、vite build 通过、测试数据清零
+- 打 annotated tag v1.0.0：十二轮迭代的干净还原点（核心功能完整 + 备份/还原闭环 + 24 处审计问题修复）
+- 部署状态：成果在本地 master，用户确认自行执行 python deploy.py

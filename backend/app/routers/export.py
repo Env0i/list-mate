@@ -39,7 +39,7 @@ def backup_database():
     return FileResponse(
         tmp_path,
         media_type="application/octet-stream",
-        filename="zace-backup.db",
+        filename=f"zace-backup-{datetime.now().strftime('%Y%m%d')}.db",
         background=BackgroundTask(os.remove, tmp_path),
     )
 
@@ -163,7 +163,7 @@ def export_json(db: Session = Depends(get_db)):
     return StreamingResponse(
         iter([json.dumps(result, ensure_ascii=False, indent=2)]),
         media_type="application/json",
-        headers={"Content-Disposition": "attachment; filename=list-mate-export.json"},
+        headers={"Content-Disposition": f"attachment; filename=zace-export-{datetime.now().strftime('%Y%m%d')}.json"},
     )
 
 
@@ -214,5 +214,5 @@ def export_csv(db: Session = Depends(get_db)):
     return StreamingResponse(
         iter(["﻿" + output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=list-mate-export.csv"},
+        headers={"Content-Disposition": f"attachment; filename=zace-export-{datetime.now().strftime('%Y%m%d')}.csv"},
     )
