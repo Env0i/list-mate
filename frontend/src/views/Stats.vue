@@ -4,7 +4,7 @@ import { statsApi, timelineApi } from '../api/client'
 import { exportApi } from '../api/client'
 import { showToast } from '../utils/toast'
 import { STATUS_LABELS_FLAT, STATUS_COLORS } from '../constants/work'
-import { actionLabels, actionIcons, formatValue, timeAgo } from '../utils/timeline'
+import { actionLabels, actionIcons, formatValue, timeAgo, dayLabel } from '../utils/timeline'
 
 const stats = ref(null)
 const timeline = ref([])
@@ -70,6 +70,18 @@ const catIcons = {
 
 const statusLabels = STATUS_LABELS_FLAT
 const statusColors = STATUS_COLORS
+
+// 操作记录按天分组（倒序数据顺序扫描，同天归入同组）
+const groupedTimeline = computed(() => {
+  const groups = []
+  for (const e of timeline.value) {
+    const label = dayLabel(e.created_at)
+    const last = groups[groups.length - 1]
+    if (last && last.label === label) last.items.push(e)
+    else groups.push({ label, items: [e] })
+  }
+  return groups
+})
 
 const maxCatCount = computed(() => stats.value ? Math.max(...stats.value.category_counts.map(c => c.count), 1) : 1)
 const maxStatusCount = computed(() => stats.value ? Math.max(...stats.value.status_counts.map(s => s.count), 1) : 1)
@@ -318,7 +330,9 @@ function ratingRank(rating) {
           <div class="tl-section" v-if="timeline.length">
             <div class="tl-scroll">
               <div class="tl-list">
-                <div v-for="entry in timeline" :key="entry.id" class="tl-item" :class="'tl-' + entry.action_type">
+                <template v-for="g in groupedTimeline" :key="g.label">
+                  <div class="tl-day">{{ g.label }}</div>
+                  <div v-for="entry in g.items" :key="entry.id" class="tl-item" :class="'tl-' + entry.action_type">
                   <div class="tl-marker">
                     <div class="tl-dot" :class="'dot-' + entry.action_type" />
                     <div class="tl-line" />
@@ -334,6 +348,7 @@ function ratingRank(rating) {
                     <div class="tl-time">{{ timeAgo(entry.created_at) }}</div>
                   </div>
                 </div>
+                </template>
               </div>
             </div>
           </div>
@@ -684,6 +699,12 @@ function ratingRank(rating) {
 .tl-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.06); border-radius: 2px; }
 
 .tl-list { position: relative; }
+.tl-day {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-tertiary);
+  padding: 14px 0 6px;
+}
 .tl-item {
   display: flex;
   gap: 14px;

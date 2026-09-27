@@ -9,7 +9,7 @@ import { getPlatformIconUrl } from '../utils/platformIcons'
 import { showToast } from '../utils/toast'
 import { emptyToNull } from '../utils/payload'
 import { STATUS_LABELS, STATUS_COLORS } from '../constants/work'
-import { actionLabels, actionIcons, formatValue, timeAgo } from '../utils/timeline'
+import { actionLabels, actionIcons, formatValue, timeAgo, dayLabel } from '../utils/timeline'
 
 const route = useRoute()
 const router = useRouter()
@@ -205,6 +205,18 @@ async function saveEdit() {
     saving.value = false
   }
 }
+
+// 历史按天分组（与 Stats 操作记录同一标签规则）
+const groupedHistory = computed(() => {
+  const groups = []
+  for (const e of history.value) {
+    const label = dayLabel(e.created_at)
+    const last = groups[groups.length - 1]
+    if (last && last.label === label) last.items.push(e)
+    else groups.push({ label, items: [e] })
+  }
+  return groups
+})
 
 async function loadHistory() {
   historyLoading.value = true
@@ -467,17 +479,20 @@ onMounted(() => { load(); loadHistory() })
         </div>
         <div v-if="historyLoading" class="history-hint">加载中...</div>
         <div v-else-if="history.length" class="history-list">
-          <div v-for="e in history" :key="e.id" class="history-item">
-            <span class="h-icon">{{ actionIcons[e.action_type] || '·' }}</span>
-            <div class="h-body">
-              <div class="h-head">
-                <span class="h-action">{{ actionLabels[e.action_type] || e.action_type }}</span>
-                <span v-if="e.game_profile_id" class="h-gp">配置 #{{ e.game_profile_id }}</span>
+          <template v-for="g in groupedHistory" :key="g.label">
+            <div class="h-day">{{ g.label }}</div>
+            <div v-for="e in g.items" :key="e.id" class="history-item">
+              <span class="h-icon">{{ actionIcons[e.action_type] || '·' }}</span>
+              <div class="h-body">
+                <div class="h-head">
+                  <span class="h-action">{{ actionLabels[e.action_type] || e.action_type }}</span>
+                  <span v-if="e.game_profile_id" class="h-gp">配置 #{{ e.game_profile_id }}</span>
+                </div>
+                <div class="h-detail">{{ formatValue(e.action_type, e.old_value, e.new_value) }}</div>
               </div>
-              <div class="h-detail">{{ formatValue(e.action_type, e.old_value, e.new_value) }}</div>
+              <span class="h-time">{{ timeAgo(e.created_at) }}</span>
             </div>
-            <span class="h-time">{{ timeAgo(e.created_at) }}</span>
-          </div>
+          </template>
         </div>
         <p v-else class="history-hint">暂无记录</p>
       </div>
@@ -1527,6 +1542,13 @@ onMounted(() => { load(); loadHistory() })
   gap: 10px;
   padding: 9px 0;
 }
+.h-day {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  color: var(--text-tertiary);
+  padding: 6px 0 2px;
+}
+.h-day:not(:first-child) { border-top: 1px solid var(--color-border); margin-top: 6px; padding-top: 12px; }
 .history-item + .history-item { border-top: 1px solid var(--color-border); }
 .h-icon {
   width: 22px;

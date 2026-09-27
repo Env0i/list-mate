@@ -40,10 +40,26 @@ export function formatValue(actionType, oldVal, newVal) {
   return n != null ? String(n).slice(0, 60) : ''
 }
 
+// 后端时间为无时区 UTC 串，统一补 Z 解析
+function dateOf(ts) {
+  return new Date(/Z$|[+-]\d{2}:?\d{2}$/.test(ts) ? ts : ts + 'Z')
+}
+
+// 分组头标签：今天 / 昨天 / M月D日（跨年补年份）
+export function dayLabel(ts) {
+  const d = dateOf(ts)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const that = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const diffDays = Math.round((today - that) / 86400000)
+  if (diffDays === 0) return '今天'
+  if (diffDays === 1) return '昨天'
+  const y = d.getFullYear() === now.getFullYear() ? '' : `${d.getFullYear()}年`
+  return `${y}${d.getMonth() + 1}月${d.getDate()}日`
+}
+
 export function timeAgo(ts) {
-  // 后端返回的是无时区标记的 UTC 时间（SQLite CURRENT_TIMESTAMP），
-  // 直接 new Date 会按本地时区解析导致偏差（东八区差 8 小时），补 Z 修正
-  const d = new Date(/Z$|[+-]\d{2}:?\d{2}$/.test(ts) ? ts : ts + 'Z')
+  const d = dateOf(ts)
   const now = new Date()
   const diff = now - d
   const mins = Math.floor(diff / 60000)

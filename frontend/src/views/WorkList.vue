@@ -209,6 +209,10 @@ function catStyle(c) {
         </div>
         <p class="empty-t">还没有作品</p>
         <p class="empty-d">搜索或手动添加第一部作品</p>
+        <div class="empty-actions">
+          <button class="empty-btn primary" @click="router.push('/search')">去搜索添加</button>
+          <button class="empty-btn" @click="router.push('/add')">手动添加</button>
+        </div>
       </div>
     </div>
   </div>
@@ -417,5 +421,19 @@ function catStyle(c) {
 .empty { text-align: center; padding: 80px 20px; }
 .empty-box { width: 56px; height: 56px; margin: 0 auto 10px; background: var(--bg-surface); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
 .empty-t { font-size: var(--fs-lg); color: var(--text-secondary); margin-bottom: 4px; }
+.empty-actions { display: flex; justify-content: center; gap: 10px; margin-top: 16px; }
+.empty-btn {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.empty-btn:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
+.empty-btn.primary { background: var(--primary); color: #fff; border-color: transparent; }
+.empty-btn.primary:hover { background: var(--primary-hover); }
 .empty-d { font-size: var(--fs-sm); color: var(--text-tertiary); }
 </style>
