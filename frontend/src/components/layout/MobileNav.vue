@@ -1,6 +1,5 @@
 <script setup>
 import { useRoute } from 'vue-router'
-import ThemeToggle from './ThemeToggle.vue'
 const route = useRoute()
 
 const tabs = [
@@ -44,7 +43,6 @@ const tabs = [
           </svg>
         </router-link>
       </template>
-      <ThemeToggle class="item theme-slot" />
     </div>
   </nav>
 </template>
@@ -87,8 +85,6 @@ const tabs = [
 
 .icon { width: 22px; height: 22px; }
 .label { font-size: 10px; line-height: 1; font-weight: 500; }
-/* 提高特异性覆盖 ThemeToggle 自身的 34px，达到触控推荐尺寸 */
-.nav .theme-slot { width: 44px; height: 44px; padding: 4px 10px; }
 
 .fab {
   position: relative;

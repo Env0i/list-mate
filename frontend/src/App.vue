@@ -1,12 +1,14 @@
 <script setup>
 import TopBar from './components/layout/TopBar.vue'
 import MobileNav from './components/layout/MobileNav.vue'
+import ThemeToggle from './components/layout/ThemeToggle.vue'
 import { useToast } from './utils/toast'
 const { toasts } = useToast()
 </script>
 
 <template>
   <TopBar />
+  <ThemeToggle floating />
   <main class="main">
     <router-view v-slot="{ Component }">
       <transition name="fade" mode="out-in">
@@ -33,12 +35,15 @@ const { toasts } = useToast()
 .main {
   margin-top: 0;
   min-height: 100vh;
+  /* 移动端顶部留出右上角悬浮主题按钮的空间 */
+  padding-top: 48px;
   padding-bottom: var(--nav-height);
 }
 
 @media (min-width: 768px) {
   .main {
     margin-top: var(--topbar-height);
+    padding-top: 0;
     padding-bottom: 0;
   }
 }
