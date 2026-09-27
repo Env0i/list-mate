@@ -239,3 +239,13 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] Stats 操作记录正常（共享工具改动后无回归，时区修复在聚合页同样生效）
 - [x] api_full_test.py 77/77
 - **Status:** complete
+
+## 第九轮: deploy.py 部署流程 dry-run 体检 ✅ (2026-09-27，未实际部署)
+
+- [x] 上传清单模拟核对：**发现 list_mate.db-shm/-wal 会被上传**（ignore 只有精确名 list_mate.db）——本地未 checkpoint 的事务数据可能污染服务器 DB，已补忽略
+- [x] fix_game_status.py（一次性清洗脚本）移出上传清单，防止服务器误运行
+- [x] 健康检查 bug 修复：原在本地执行却打服务器回环地址 127.0.0.1:8002（永远不通，白等 60s），改走 Nginx 公网链路 HOST:8081（nginx→uvicorn 全验证）
+- [x] dist 上传前清空远端旧产物（vite hash 文件名无限累积）
+- [x] 本机安装 paramiko（部署依赖，此前缺失会直接 ImportError）
+- [x] 验证：py_compile 通过、上传清单 31 个文件无敏感/冗余残留、vite build 通过（未实际连接服务器）
+- **Status:** complete

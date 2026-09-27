@@ -8,8 +8,7 @@ Zace — 全自动部署脚本
   3. 上传 backend/ → 服务器 /www/Zace/backend/（排除 venv/__pycache__）
   4. 服务器上创建 venv + pip install
   5. 创建 systemd 服务 (zace.service)
-  6. 创建 Nginx 配置 (端口 8081, API 代理至 8002)
-  7. 重启服务
+  6. 创建 Nginx 配置 (端口 8081, API 代理至 8002) 并重启服务
 """
 import os, sys, time
 import paramiko
@@ -62,9 +61,11 @@ def connect():
 
 
 # ─── 第 3 步: 上传前端 ──────────────────────────────────────
-def upload_frontend(sftp):
+def upload_frontend(client, sftp):
     print("=" * 50)
     print("3/6  上传前端 dist...")
+    # 先清空远端旧产物：vite 产物带 hash，旧资源会无限累积
+    _run(client, f"rm -rf {REMOTE_DIST}")
     local_dist = os.path.join(FRONTEND_SRC, "dist")
     _upload_dir(sftp, local_dist, REMOTE_DIST)
 
@@ -75,7 +76,9 @@ def upload_backend(sftp):
     print("4/6  上传后端代码...")
     _upload_dir(sftp, BACKEND_SRC, REMOTE_BACKEND, ignore=[
         "venv", "__pycache__", ".venv", "*.pyc", ".pytest_cache",
-        "list_mate.db", "bangumi_cache", "server.log",
+        "list_mate.db", "list_mate.db-shm", "list_mate.db-wal",
+        "bangumi_cache", "server.log",
+        "fix_game_status.py",  # 一次性数据清洗脚本，误运行会改服务器数据
     ])
 
 
@@ -212,11 +215,13 @@ WantedBy=multi-user.target
     _run(client, "systemctl enable zace.service")
     _run(client, "systemctl restart zace.service")
     _run(client, "nginx -s reload")
-    print("  健康检查...")
+    print("  健康检查（经 Nginx 公网链路）...")
     for i in range(12):  # retry for up to 60 seconds
         time.sleep(5)
         try:
-            resp = httpx.get("http://127.0.0.1:8002/api/works?page_size=1", timeout=3)
+            # 原先打的 127.0.0.1:8002 是部署机自己的回环地址（uvicorn 的
+            # 127.0.0.1 属于服务器），本地脚本永远连不上；改走 Nginx 公网入口
+            resp = httpx.get(f"http://{HOST}:8081/api/works?page_size=1", timeout=5)
             if resp.status_code == 200:
                 print("  ✓ API 健康检查通过")
                 break
@@ -254,7 +259,7 @@ def main():
         sftp.mkdir(REMOTE_ROOT)
         print(f"  创建 {REMOTE_ROOT}")
 
-    upload_frontend(sftp)
+    upload_frontend(client, sftp)
     upload_backend(sftp)
     sftp.close()
 
