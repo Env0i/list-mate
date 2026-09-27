@@ -26,3 +26,11 @@
 
 ## Visual/Browser Findings
 -
+
+## 产品决策 (2026-09-27 自主接管第六轮)
+
+### GameProfile count 型进度不自动完成 — 用户确认
+- percent 型 ≥100% 自动标 completed；count 型（二周目等通关次数）**保持手动标记**
+- 理由：次数是开放积累（一刷/二刷/三刷…），没有天然的"完成"锚点；引入"目标次数"字段属于过度设计
+- 影响范围：GameProfile 自动完成规则仅覆盖 percent；count/none 型状态由用户手动管理
+- 用户拍板方式：AskUserQuestion 三选一（保持手动/目标次数字段/≥2次自动），用户选"保持手动标记（推荐）"
