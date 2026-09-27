@@ -15,6 +15,8 @@
   --primary: #FF6B35;
   --primary-light: rgba(255, 107, 53, 0.08);
   --primary-hover: #E55A2B;
+  --primary-soft: #FF8F5E;
+  --primary-gradient: linear-gradient(135deg, var(--primary), var(--primary-soft));
 
   /* Category colors — saturated gacha-element palette */
   --c-anime: #FF1A5E;

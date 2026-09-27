@@ -258,3 +258,11 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] api_full_test.py 新增用例：备份为合法 SQLite 文件 + 含 timeline_entries 表
 - [x] 验证：78 条用例全通过；浏览器实测下载事件真实触发
 - **Status:** complete
+
+## 第十一轮: 样式漂移清零 ✅ (2026-09-27)
+
+- [x] MobileNav FAB 渐变 → style.css 新增 --primary-soft/--primary-gradient 令牌
+- [x] Tags.vue .err/.act-del:hover 危险色 #ef4444 → var(--s-dropped)（第 18 行色板数组里的是用户可选色，保留）
+- [x] WorkDetail stamp-in 关键帧分叉归一（删除本地 2deg 版本，统一全局 3deg；元素静止角 2deg 不变）
+- [x] 验证：build 通过；375px 标签页/FAB 截图无回归
+- **Status:** complete

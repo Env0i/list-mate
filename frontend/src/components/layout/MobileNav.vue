@@ -103,7 +103,7 @@ const tabs = [
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, #FF6B35, #FF8F5E);
+  background: var(--primary-gradient);
   box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
   transition: transform 0.15s;
 }

@@ -400,7 +400,7 @@ async function remove(id) {
 .color-custom:hover { color: var(--text-primary); }
 .color-native { position: absolute; opacity: 0; width: 0; height: 0; }
 
-.err { font-size: var(--fs-xs); color: #ef4444; margin-top: 10px; }
+.err { font-size: var(--fs-xs); color: var(--s-dropped); margin-top: 10px; }
 
 /* Loading */
 .loading {
@@ -490,7 +490,7 @@ async function remove(id) {
   transition: all 0.15s;
 }
 .act-btn:hover { background: var(--bg-surface-hover); color: var(--primary); }
-.act-del:hover { color: #ef4444; }
+.act-del:hover { color: var(--s-dropped); }
 
 /* Tag card — editing state */
 .edit-color-strip {

@@ -938,12 +938,6 @@ onMounted(() => { load(); loadHistory() })
   box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   animation: stamp-in 0.4s cubic-bezier(.34,1.56,.64,1) both;
 }
-@keyframes stamp-in {
-  0%   { transform: rotate(3deg) scale(0); opacity: 0; }
-  60%  { transform: rotate(3deg) scale(1.08); }
-  100% { transform: rotate(2deg) scale(1); opacity: 1; }
-}
-
 /* Bangumi info inside card */
 .section-label {
   font-size: var(--fs-xs);
