@@ -19,7 +19,7 @@ backend/            # FastAPI 后端
     config.py       # 配置
     models/         # ORM 模型 (Work, GameProfile, Tag, WorkTag, Attachment, TimelineEntry)
     schemas/        # Pydantic 请求/响应模型
-    routers/        # API 路由 (works, game_profiles, tags, bangumi)
+    routers/        # API 路由 (works, game_profiles, tags, bangumi, stats, timeline, attachments, export)
   bangumi_cache/    # 封面图片缓存目录（或存 BLOB，见设计文档）
   list_mate.db      # SQLite 数据库
   requirements.txt
@@ -31,7 +31,9 @@ frontend/           # Vue 3 前端
     components/     # 通用组件
       layout/       # TopBar（桌面导航）、MobileNav（手机底部导航）
       work/         # WorkCardGrid、ProgressBar、CategoryBadge
-    views/          # 页面组件 (WorkList, WorkDetail, GameProfileDetail, GameProfileNew, Search, Add)
+    views/          # 页面组件 (WorkList, WorkDetail, GameProfileDetail, GameProfileNew, Search, Add, Stats, Tags)
+    constants/      # 展示常量 (品类/状态标签与颜色，设计令牌引用)
+    utils/          # toast/payload/theme/timeline 等共享工具
     router/         # 路由配置
     style.css       # 全局 CSS 变量、品类色、动画关键帧
     App.vue         # 根组件（TopBar + router-view + MobileNav）
@@ -43,7 +45,7 @@ frontend/           # Vue 3 前端
 - **两套状态枚举**: 动漫/小说/漫画用 wish/watching/completed/paused/dropped；游戏用 wish/playing/completed/dropped/wait_buy/wait_sale
 - **单前端 + 响应式**: 不做 Uni-app 原生编译，一套 Vue 3 代码适配手机和桌面
 - **封面缓存**: Bangumi 图片存为 BLOB，不依赖外部服务展示
-- **进度自动完成**: progress_value >= total (>0) 时自动标记 completed，可手动覆盖
+- **进度自动完成**: 动漫/小说/漫画在 progress_value >= total(>0) 且本次请求未显式改状态时自动标记 completed（auto_completed 旗标防止反复触发，手动改回非 completed 会重置）；游戏 GameProfile 仅 percent 型 ≥100 自动完成；count（二刷次数）/none 型**保持手动标记**（2026-09-27 用户确认，决策见 findings.md）
 - **GameProfile 进度类型**: progress_type 决定进度含义 — count（通关次数）、percent（完成百分比）、none（纯状态）
 - **多附件**: 每个 GameProfile 可挂多个附件（不限定格式）
 - **编辑方式**: 模态对话框编辑，无独立编辑页
@@ -60,7 +62,7 @@ frontend/           # Vue 3 前端
 
 ## 关键约定
 
-- **API 基础路径**: `/api` → Vite dev proxy: `http://localhost:8000`
+- **API 基础路径**: `/api` → Vite dev proxy: `http://localhost:8001`
 - **响应式断点**: `<768px` 手机（底部 Tab），`>=768px` 桌面（顶部导航栏 TopBar）
 - **视觉风格**: 抽卡图鉴/集换式卡牌 UI — 暖白卡册纸背景 (#F7F5F0)，品类色辉光，全息闪光 hover，EXP 经验值条，印章式状态戳记，发牌入场动画
 - **字体**: DM Sans + Noto Sans SC
@@ -73,12 +75,12 @@ frontend/           # Vue 3 前端
 ## 启动
 
 ```bash
-# 后端 (端口 8000)
+# 后端 (端口 8001，run.py 实际监听)
 cd backend
 pip install -r requirements.txt
 python run.py
 
-# 前端 (端口 5173, 代理 /api → 8000)
+# 前端 (端口 5173, 代理 /api → 8001)
 cd frontend
 npm install
 npx vite
