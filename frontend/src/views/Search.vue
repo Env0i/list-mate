@@ -59,6 +59,15 @@ function selectItem(item) {
   }
   selected.value = item
   showDialog.value = true
+  // 动画自动回填总集数（Bangumi 的 total_episodes 单位与 ep 一致；
+  // 漫画按卷、小说按章，话数不能混用，保持手填）。失败静默，不影响手动填写。
+  if (item.type === 2) {
+    bangumiApi.get(item.bangumi_id).then(({ data }) => {
+      if (selected.value === item && data.total_episodes && form.value.total == null) {
+        form.value.total = data.total_episodes
+      }
+    }).catch(() => {})
+  }
 }
 
 async function confirmCreate() {

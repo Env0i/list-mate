@@ -183,3 +183,21 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] 断点规范写入 AGENTS.md：主断点 767/768 + 小屏档 480，网格阶梯例外
 - [x] 验证：build 通过；740px 宽度实测编辑弹窗单列
 - **Status:** complete
+
+## 第五轮: Bangumi 回填总集数 + 类型过滤修复 ✅ (2026-09-27)
+
+### Phase 1: 搜索添加自动回填
+- [x] Search.vue 选中动画条目时拉取详情，total_episodes 自动填入总量（单位语义一致）；
+      漫画(卷)/小说(章)单位不匹配不做回填；失败静默
+- **Status:** complete
+
+### Phase 2: 类型过滤真修复（浏览器实测发现的存量 bug）
+- [x] bangumi.py 裸 type 字段被 v0 API 静默忽略 → filter.type 数组格式
+- [x] api_full_test.py "Get work by valid ID" 空库自建数据（消除环境依赖）
+- **Status:** complete
+
+### Phase 3: 验证
+- [x] 裸 API 对照：裸 type 返回混合类型，filter.type 返回全 2
+- [x] 浏览器：番剧过滤 → 选中动画 → 总量自动填 26
+- [x] api_full_test.py 全部通过（含空库自洽用例）
+- **Status:** complete

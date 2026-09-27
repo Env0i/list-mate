@@ -192,13 +192,20 @@ def test_list_works_empty_search():
 # =====================================================================
 
 def test_get_work_valid():
-    # Get the list first to find a valid ID
+    # Get the list first to find a valid ID; 空库时自建一条，保证用例自洽
     r = client.get("/works", params={"page_size": 1})
     assert_status(r, 200)
     items = r.json()["items"]
     if not items:
-        raise AssertionError("No works in database to test")
-    wid = items[0]["id"]
+        rc = client.post("/works", json={
+            "title": "get-valid-id 自建数据",
+            "category": "anime",
+            "progress_unit": "ep",
+        })
+        assert_status(rc, 201)
+        wid = rc.json()["id"]
+    else:
+        wid = items[0]["id"]
     r2 = client.get(f"/works/{wid}")
     assert_status(r2, 200)
     data = r2.json()

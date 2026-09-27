@@ -19,7 +19,8 @@ def search_bangumi(
 ):
     body = {"keyword": q}
     if type:
-        body["type"] = type
+        # v0 搜索接口的过滤格式是 filter.type 数组；裸 type 字段会被 API 静默忽略
+        body["filter"] = {"type": [type]}
 
     try:
         resp = httpx.post(
