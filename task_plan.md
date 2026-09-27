@@ -214,3 +214,13 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 ## 第六轮补充: count 型产品决策已关闭 ✅ (2026-09-27)
 - 用户确认 count 型保持手动标记，不加字段不加规则；决策已记录到 findings.md
 - 此条从遗留事项中移除——后续轮次不再重复处理
+
+## 第七轮: 详情页作品历史（时间线 UI）✅ (2026-09-27)
+
+- [x] 新增 utils/timeline.js：actionLabels/actionIcons/formatValue/timeAgo 共享，Stats 操作记录换用（消除两份漂移）
+- [x] WorkDetail 新增"历史"卡：品类色边框，展示该作品全部操作（添加/状态/评分/进度/评价），最多 20 条 + 总数
+- [x] 修复 timeAgo 时区 bug：后端 UTC 无时区串按本地解析导致偏差 8 小时（Stats 页同病），补 Z 修正
+- [x] 修复 formatValue 反序列化：时间线 old/new 是 json.dumps 串，原样显示成 "watching" → 带引号枚举；
+      先 unjson 再映射中文标签（Stats 页同病）
+- [x] 验证：build 通过；浏览器实测历史渲染（"状态变更 在看 → 暂停 1分钟前"），变更即时入历史
+- **Status:** complete

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { worksApi, tagsApi, coverApi } from '../api/client'
+import { worksApi, tagsApi, coverApi, timelineApi } from '../api/client'
 import CategoryBadge from '../components/work/CategoryBadge.vue'
 import ProgressBar from '../components/work/ProgressBar.vue'
 import PlatformSelector from '../components/work/PlatformSelector.vue'
@@ -9,6 +9,7 @@ import { getPlatformIconUrl } from '../utils/platformIcons'
 import { showToast } from '../utils/toast'
 import { emptyToNull } from '../utils/payload'
 import { STATUS_LABELS, STATUS_COLORS } from '../constants/work'
+import { actionLabels, actionIcons, formatValue, timeAgo } from '../utils/timeline'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +19,9 @@ const deleting = ref(false)
 const saving = ref(false)
 const showEditModal = ref(false)
 const form = ref({})
+const history = ref([])
+const historyLoading = ref(true)
+const historyTotal = ref(0)
 const allTags = ref([])
 const selectedTagIds = ref([])
 const tagLoading = ref(false)
@@ -202,7 +206,20 @@ async function saveEdit() {
   }
 }
 
-onMounted(load)
+async function loadHistory() {
+  historyLoading.value = true
+  try {
+    const { data } = await timelineApi.list({ work_id: route.params.id, page_size: 20 })
+    history.value = data.items
+    historyTotal.value = data.total
+  } catch (e) {
+    console.error('Failed to load history', e)
+  } finally {
+    historyLoading.value = false
+  }
+}
+
+onMounted(() => { load(); loadHistory() })
 </script>
 
 <template>
@@ -440,6 +457,29 @@ onMounted(load)
             <p class="review-text">{{ work.review }}</p>
           </div>
         </template>
+      </div>
+
+      <!-- History card -->
+      <div class="history-card" :style="{ '--cat-color': catColor }">
+        <div class="tracking-header">
+          <h2 class="tracking-title">历史</h2>
+          <span v-if="historyTotal" class="history-count">{{ historyTotal }} 条记录</span>
+        </div>
+        <div v-if="historyLoading" class="history-hint">加载中...</div>
+        <div v-else-if="history.length" class="history-list">
+          <div v-for="e in history" :key="e.id" class="history-item">
+            <span class="h-icon">{{ actionIcons[e.action_type] || '·' }}</span>
+            <div class="h-body">
+              <div class="h-head">
+                <span class="h-action">{{ actionLabels[e.action_type] || e.action_type }}</span>
+                <span v-if="e.game_profile_id" class="h-gp">配置 #{{ e.game_profile_id }}</span>
+              </div>
+              <div class="h-detail">{{ formatValue(e.action_type, e.old_value, e.new_value) }}</div>
+            </div>
+            <span class="h-time">{{ timeAgo(e.created_at) }}</span>
+          </div>
+        </div>
+        <p v-else class="history-hint">暂无记录</p>
       </div>
 
       <!-- Game profiles section -->
@@ -1471,4 +1511,60 @@ onMounted(load)
 .tchip:hover { opacity: 0.8; }
 .tchip:active { transform: none; }
 .tchip.on { font-weight: 700; }
+
+/* ===== History card ===== */
+.history-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  margin-top: 20px;
+  box-shadow:
+    0 0 0 1px var(--frame-outer-line),
+    0 0 0 2px rgba(255,255,255,0.5),
+    var(--shadow-md);
+  border-left: 3px solid var(--cat-color);
+}
+.history-count { font-size: var(--fs-xs); color: var(--text-tertiary); font-weight: 600; }
+.history-hint { font-size: var(--fs-sm); color: var(--text-tertiary); padding: 6px 0; }
+.history-list { display: flex; flex-direction: column; }
+.history-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 0;
+}
+.history-item + .history-item { border-top: 1px solid var(--color-border); }
+.h-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.h-body { flex: 1; min-width: 0; }
+.h-head { display: flex; align-items: center; gap: 8px; }
+.h-action { font-size: var(--fs-sm); font-weight: 700; color: var(--text-primary); }
+.h-gp {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-input);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.h-detail {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.h-time { font-size: 10px; color: var(--text-tertiary); flex-shrink: 0; margin-top: 3px; }
+
 </style>

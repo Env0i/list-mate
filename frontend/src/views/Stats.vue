@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { statsApi, timelineApi } from '../api/client'
 import { exportApi } from '../api/client'
 import { STATUS_LABELS_FLAT, STATUS_COLORS } from '../constants/work'
+import { actionLabels, actionIcons, formatValue, timeAgo } from '../utils/timeline'
 
 const stats = ref(null)
 const timeline = ref([])
@@ -44,14 +45,6 @@ const catIcons = {
 const statusLabels = STATUS_LABELS_FLAT
 const statusColors = STATUS_COLORS
 
-const actionLabels = {
-  created: '添加', status_change: '状态变更', rating_change: '评分变更',
-  review_change: '评价变更', progress_update: '进度更新',
-}
-const actionIcons = {
-  created: '＋', status_change: '⇄', rating_change: '★', review_change: '✎', progress_update: '↑',
-}
-
 const maxCatCount = computed(() => stats.value ? Math.max(...stats.value.category_counts.map(c => c.count), 1) : 1)
 const maxStatusCount = computed(() => stats.value ? Math.max(...stats.value.status_counts.map(s => s.count), 1) : 1)
 const maxRatingCount = computed(() => stats.value ? Math.max(...stats.value.rating_distribution.map(r => r.count), 1) : 1)
@@ -76,42 +69,6 @@ const totalCompleted = computed(() => {
     .filter(s => s.status === 'completed')
     .reduce((sum, s) => sum + s.count, 0)
 })
-
-function formatValue(actionType, oldVal, newVal) {
-  if (actionType === 'status_change') {
-    const o = oldVal ? (statusLabels[oldVal] || oldVal) : '无'
-    const n = newVal ? (statusLabels[newVal] || newVal) : '无'
-    return `${o} → ${n}`
-  }
-  if (actionType === 'rating_change') {
-    const o = oldVal != null ? `${oldVal}/10` : '未评分'
-    const n = newVal != null ? `${newVal}/10` : '未评分'
-    return `${o} → ${n}`
-  }
-  if (actionType === 'progress_update') {
-    return `${oldVal ?? '—'} → ${newVal ?? '—'}`
-  }
-  if (actionType === 'created') {
-    try { return JSON.parse(newVal).title }
-    catch { return newVal }
-  }
-  return newVal ? String(newVal).slice(0, 60) : ''
-}
-
-function timeAgo(ts) {
-  const d = new Date(ts)
-  const now = new Date()
-  const diff = now - d
-  const mins = Math.floor(diff / 60000)
-  if (mins < 60) return `${mins}分钟前`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}小时前`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}天前`
-  const months = Math.floor(days / 30)
-  if (months < 12) return `${months}个月前`
-  return `${Math.floor(months / 12)}年前`
-}
 
 function ratingRank(rating) {
   if (rating === -1) return { label: '--', color: '#ccc' }
