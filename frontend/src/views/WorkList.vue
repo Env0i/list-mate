@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { worksApi, tagsApi } from '../api/client'
 import WorkCardGrid from '../components/work/WorkCardGrid.vue'
+import ThemeToggle from '../components/layout/ThemeToggle.vue'
 
 const router = useRouter()
 
@@ -134,6 +135,7 @@ function catStyle(c) {
           <h1 class="title">收藏</h1>
           <span class="count">{{ filtered.length }}</span>
         </div>
+        <ThemeToggle class="hd-theme" />
         <div class="hd-right">
           <select v-model="sortBy" class="sort-sel" title="排序方式">
             <option v-for="s in SORTS" :key="s.key" :value="s.key">{{ s.label }}</option>
@@ -235,7 +237,12 @@ function catStyle(c) {
 @media (max-width: 767px) {
   .hd-row { flex-wrap: wrap; row-gap: 12px; }
   .title { white-space: nowrap; }
+  /* 主题按钮与"收藏"标题同行右侧（桌面由 TopBar 承载，页内隐藏） */
+  .hd-theme { margin-left: auto; }
   .hd-right { width: 100%; justify-content: flex-end; }
+}
+@media (min-width: 768px) {
+  .hd-theme { display: none; }
 }
 .hd-left { display: flex; align-items: baseline; gap: 10px; }
 .title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.5px; }
