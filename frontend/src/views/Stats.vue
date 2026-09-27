@@ -449,6 +449,10 @@ function ratingRank(rating) {
   gap: 10px;
   margin-bottom: 20px;
 }
+@media (max-width: 480px) {
+  .quick-chips { gap: 8px; }
+  .chip { padding: 10px 12px; gap: 8px; }
+}
 .chip {
   display: flex;
   align-items: center;
@@ -473,6 +477,7 @@ function ratingRank(rating) {
   font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-tertiary);
+  white-space: nowrap;
 }
 .chip-wish { border-left: 3px solid var(--s-watching); }
 .chip-done { border-left: 3px solid var(--s-completed); }

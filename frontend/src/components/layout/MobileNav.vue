@@ -77,7 +77,8 @@ const tabs = [
   flex-direction: column;
   align-items: center;
   gap: 3px;
-  padding: 4px 10px;
+  padding: 6px 10px;
+  touch-action: manipulation;
   color: var(--text-tertiary);
   transition: color 0.2s;
   min-width: 48px;
@@ -86,7 +87,8 @@ const tabs = [
 
 .icon { width: 22px; height: 22px; }
 .label { font-size: 10px; line-height: 1; font-weight: 500; }
-.theme-slot { padding: 4px 10px; }
+/* 提高特异性覆盖 ThemeToggle 自身的 34px，达到触控推荐尺寸 */
+.nav .theme-slot { width: 44px; height: 44px; padding: 4px 10px; }
 
 .fab {
   position: relative;

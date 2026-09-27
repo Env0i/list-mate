@@ -231,6 +231,12 @@ function catStyle(c) {
   justify-content: space-between;
   margin-bottom: 18px;
 }
+/* 移动端标题与工具行分两行，避免标题被挤压竖排 */
+@media (max-width: 767px) {
+  .hd-row { flex-wrap: wrap; row-gap: 12px; }
+  .title { white-space: nowrap; }
+  .hd-right { width: 100%; justify-content: flex-end; }
+}
 .hd-left { display: flex; align-items: baseline; gap: 10px; }
 .title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.5px; }
 .count {
@@ -287,6 +293,10 @@ function catStyle(c) {
   border-radius: var(--radius-md);
   margin-bottom: 8px;
 }
+@media (max-width: 767px) {
+  .cat-tabs { padding: 4px; }
+  .cat-tab { height: 38px; }
+}
 .cat-tab {
   flex: 1;
   display: flex;
@@ -294,6 +304,7 @@ function catStyle(c) {
   justify-content: center;
   gap: 6px;
   height: 32px;
+  touch-action: manipulation;
   padding: 0 12px;
   border-radius: 8px;
   font-size: var(--fs-sm);
@@ -336,6 +347,11 @@ function catStyle(c) {
   font-weight: 600;
   color: var(--text-tertiary);
   transition: all 0.15s;
+  touch-action: manipulation;
+}
+/* 移动端提升触控目标（Apple HIG 建议 44px，横滑 chips 取 36px 折中） */
+@media (max-width: 767px) {
+  .st-filter { height: 36px; padding: 0 14px; border-radius: 18px; }
 }
 .st-filter:hover { color: var(--text-secondary); }
 .st-filter:active { transform: none; }
