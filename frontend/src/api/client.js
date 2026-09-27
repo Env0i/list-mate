@@ -55,6 +55,7 @@ export const attachmentsApi = {
 export const exportApi = {
   jsonUrl() { return '/api/export/json' },
   csvUrl() { return '/api/export/csv' },
+  backupUrl() { return '/api/backup' },
 }
 
 export const coverApi = {

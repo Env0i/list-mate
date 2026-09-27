@@ -1,18 +1,45 @@
 import csv
 import io
 import json
+import os
+import sqlite3
+import tempfile
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from sqlalchemy.orm import Session
+from starlette.background import BackgroundTask
 
 from sqlalchemy.orm import selectinload
+from ..config import DATABASE_PATH
 from ..database import get_db
 from ..models.work import Work
 from ..models.tag import Tag, WorkTag
 from ..models.game_profile import GameProfile, GameStatus
 
 router = APIRouter(tags=["export"])
+
+
+@router.get("/backup")
+def backup_database():
+    """整库在线备份（含时间线/附件/封面 BLOB 等导出接口不覆盖的数据）。
+
+    WAL 模式下直接拷贝 .db 文件会丢未 checkpoint 的数据，用 SQLite
+    在线 backup API 生成一致性快照；响应结束后删除临时文件。"""
+    fd, tmp_path = tempfile.mkstemp(suffix=".db")
+    os.close(fd)
+    src = sqlite3.connect(DATABASE_PATH)
+    dst = sqlite3.connect(tmp_path)
+    with dst:
+        src.backup(dst)
+    dst.close()
+    src.close()
+    return FileResponse(
+        tmp_path,
+        media_type="application/octet-stream",
+        filename="zace-backup.db",
+        background=BackgroundTask(os.remove, tmp_path),
+    )
 
 
 @router.get("/export/json")

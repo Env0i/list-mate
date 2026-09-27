@@ -112,6 +112,14 @@ function ratingRank(rating) {
             </svg>
             <span class="export-label">CSV</span>
           </a>
+          <a :href="exportApi.backupUrl()" class="export-btn" download title="下载数据库完整备份（含时间线/附件/封面，可直接还原）">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
+              <path d="M10 2a4 4 0 00-4 4v4.5a.75.75 0 001.5 0V6a2.5 2.5 0 015 0v4.5a.75.75 0 001.5 0V6a4 4 0 00-4-4z"/>
+              <path d="M5.5 9.25a.75.75 0 011.5 0v2.25a3 3 0 006 0V9.25a.75.75 0 011.5 0v2.25a4.5 4.5 0 01-9 0V9.25z"/>
+              <path d="M10 13.25a.75.75 0 01.75.75v2.19l.97-.97a.75.75 0 111.06 1.06l-2.25 2.25a.75.75 0 01-1.06 0l-2.25-2.25a.75.75 0 111.06-1.06l.97.97V14a.75.75 0 01.75-.75z"/>
+            </svg>
+            <span class="export-label">备份</span>
+          </a>
         </div>
       </div>
 

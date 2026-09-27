@@ -249,3 +249,12 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] 本机安装 paramiko（部署依赖，此前缺失会直接 ImportError）
 - [x] 验证：py_compile 通过、上传清单 31 个文件无敏感/冗余残留、vite build 通过（未实际连接服务器）
 - **Status:** complete
+
+## 第十轮: 数据库一键备份 ✅ (2026-09-27)
+
+- [x] 新增 GET /api/backup：SQLite 在线 backup API 生成一致性快照（WAL 模式下直接拷 .db 会丢未 checkpoint 数据），响应后自动清理临时文件
+- [x] 覆盖 JSON/CSV 导出不包含的数据：时间线、附件、封面 BLOB——这才是可完整还原的备份
+- [x] Stats 页导出区新增"备份"按钮（JSON/CSV/备份三个入口并排）
+- [x] api_full_test.py 新增用例：备份为合法 SQLite 文件 + 含 timeline_entries 表
+- [x] 验证：78 条用例全通过；浏览器实测下载事件真实触发
+- **Status:** complete

@@ -1053,6 +1053,16 @@ def test_export_endpoint():
     assert r.status_code in (200, 404, 405)
 
 
+def test_backup_endpoint():
+    """整库备份：应为合法 SQLite 文件（含时间线/附件等全部数据）。"""
+    r = client.get("/backup")
+    assert_status(r, 200)
+    assert r.content[:16] == b"SQLite format 3\x00", "备份文件不是 SQLite 格式"
+    assert len(r.content) > 4096, "备份文件过小，疑似空库快照"
+    # 内容抽查：备份中应能找到 timeline 表的建表语句
+    assert b"timeline_entries" in r.content, "备份缺少 timeline_entries 表"
+
+
 def test_root_endpoint():
     """Check root docs are accessible."""
     r = client.get("/docs")
@@ -1222,6 +1232,7 @@ def main():
     test("Create work with all fields filled", test_create_work_with_all_fields)
     test("Tag cascade cleanup on delete", test_tag_cascade_cleanup)
     test("Export endpoint", test_export_endpoint)
+    test("Backup endpoint (SQLite snapshot)", test_backup_endpoint)
     test("Root/docs endpoint", test_root_endpoint)
 
     # ===================== Results =====================
