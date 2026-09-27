@@ -86,6 +86,8 @@ const groupedTimeline = computed(() => {
 const maxCatCount = computed(() => stats.value ? Math.max(...stats.value.category_counts.map(c => c.count), 1) : 1)
 const maxStatusCount = computed(() => stats.value ? Math.max(...stats.value.status_counts.map(s => s.count), 1) : 1)
 const maxRatingCount = computed(() => stats.value ? Math.max(...stats.value.rating_distribution.map(r => r.count), 1) : 1)
+const monthly = computed(() => stats.value?.monthly_activity ?? [])
+const maxMonthCount = computed(() => stats.value ? Math.max(...stats.value.monthly_activity.map(m => m.operations), 1) : 1)
 
 const sortedRatings = computed(() => {
   if (!stats.value) return []
@@ -310,6 +312,30 @@ function ratingRank(rating) {
                     />
                   </div>
                   <span class="bar-num">{{ r.count }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Monthly activity trend (spans both columns) -->
+            <div class="chart-card chart-wide">
+              <div class="chart-h">
+                <span class="chart-dot" style="background: var(--primary);" />
+                月度活跃趋势
+              </div>
+              <div class="bar-list">
+                <div
+                  v-for="m in monthly"
+                  :key="m.month"
+                  class="bar-row"
+                >
+                  <span class="bar-label bar-label-month">{{ m.month }}</span>
+                  <div class="bar-track">
+                    <div
+                      class="bar-fill month-fill"
+                      :style="{ width: (m.operations / maxMonthCount * 100) + '%' }"
+                    />
+                  </div>
+                  <span class="bar-num">{{ m.operations }}</span>
                 </div>
               </div>
             </div>
@@ -592,6 +618,9 @@ function ratingRank(rating) {
   transition: box-shadow 0.15s;
 }
 .chart-card:hover { box-shadow: var(--shadow-md); }
+.chart-wide { grid-column: 1 / -1; }
+.bar-label-month { min-width: 52px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
+.month-fill { background: linear-gradient(90deg, var(--primary), var(--primary-soft)); }
 
 .chart-h {
   display: flex;
