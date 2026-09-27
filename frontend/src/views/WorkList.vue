@@ -5,13 +5,35 @@ import { worksApi, tagsApi } from '../api/client'
 import WorkCardGrid from '../components/work/WorkCardGrid.vue'
 
 const router = useRouter()
-const activeCat = ref('all')
-const activeSt = ref('all')
-const q = ref('')
+
+// —— 偏好持久化：筛选/搜索/排序状态存 localStorage，刷新与下次访问不丢 ——
+const PREFS_KEY = 'zace-prefs-list'
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {} } catch { return {} }
+}
+const savedPrefs = loadPrefs()
+
+const activeCat = ref(savedPrefs.cat ?? 'all')
+const activeSt = ref(savedPrefs.st ?? 'all')
+const activeTagId = ref(savedPrefs.tagId ?? null)
+const q = ref(savedPrefs.q ?? '')
+const SORTS = [
+  { key: 'updated', label: '最近更新' },
+  { key: 'rating', label: '评分优先' },
+  { key: 'priority', label: '优先度' },
+  { key: 'title', label: '标题' },
+]
+const sortBy = ref(SORTS.some(s => s.key === savedPrefs.sort) ? savedPrefs.sort : 'updated')
+
+watch([activeCat, activeSt, activeTagId, q, sortBy], () => {
+  localStorage.setItem(PREFS_KEY, JSON.stringify({
+    cat: activeCat.value, st: activeSt.value, tagId: activeTagId.value, q: q.value, sort: sortBy.value,
+  }))
+})
+
 const works = ref([])
 const loading = ref(true)
 const tags = ref([])
-const activeTagId = ref(null)
 
 onMounted(async () => {
   try {
@@ -21,6 +43,10 @@ onMounted(async () => {
     ])
     works.value = worksRes.data.items
     tags.value = tagsRes.data
+    // 恢复的标签筛选若已失效则清掉
+    if (activeTagId.value && !tags.value.some(t => t.id === activeTagId.value)) {
+      activeTagId.value = null
+    }
   } catch (e) {
     console.error('Failed to load data', e)
   } finally {
@@ -78,15 +104,20 @@ const workStatus = (w) => {
   return w.status || 'wish'
 }
 
-const filtered = computed(() =>
-  works.value.filter(w => {
+const filtered = computed(() => {
+  const list = works.value.filter(w => {
     if (activeCat.value !== 'all' && w.category !== activeCat.value) return false
     if (activeSt.value !== 'all' && workStatus(w) !== activeSt.value) return false
     if (activeTagId.value && !(w.tag_ids || []).includes(activeTagId.value)) return false
     if (q.value && !w.title.toLowerCase().includes(q.value.toLowerCase())) return false
     return true
   })
-)
+  if (sortBy.value === 'rating') list.sort((a, b) => (b.rating ?? -1) - (a.rating ?? -1))
+  else if (sortBy.value === 'priority') list.sort((a, b) => (b.priority ?? -1) - (a.priority ?? -1))
+  else if (sortBy.value === 'title') list.sort((a, b) => a.title.localeCompare(b.title, 'zh-Hans-CN'))
+  // 'updated'：后端已按 updated_at desc 返回
+  return list
+})
 
 function catStyle(c) {
   if (c.key === 'all' || activeCat.value !== c.key) return {}
@@ -104,6 +135,9 @@ function catStyle(c) {
           <span class="count">{{ filtered.length }}</span>
         </div>
         <div class="hd-right">
+          <select v-model="sortBy" class="sort-sel" title="排序方式">
+            <option v-for="s in SORTS" :key="s.key" :value="s.key">{{ s.label }}</option>
+          </select>
           <div class="search-w">
             <svg class="s-icon" viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
               <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd"/>
@@ -209,6 +243,22 @@ function catStyle(c) {
   align-items: center;
   gap: 8px;
 }
+
+/* Sort — compact select matching the search input */
+.sort-sel {
+  height: 32px;
+  padding: 0 8px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sort-sel:hover { border-color: var(--text-tertiary); }
+.sort-sel:focus { outline: none; border-color: var(--text-tertiary); }
 
 /* Search — compact inline */
 .search-w {

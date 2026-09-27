@@ -1,5 +1,6 @@
 <script setup>
 import { useRoute } from 'vue-router'
+import ThemeToggle from './ThemeToggle.vue'
 const route = useRoute()
 
 const items = [
@@ -43,6 +44,7 @@ const items = [
           <span class="ni-t">{{ item.name }}</span>
         </router-link>
       </nav>
+      <ThemeToggle />
     </div>
   </header>
 </template>
@@ -52,12 +54,12 @@ const items = [
   display: none;
   position: fixed; top: 0; left: 0; right: 0;
   height: var(--topbar-height);
-  background: rgba(255,255,255,0.82);
+  background: var(--topbar-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(0,0,0,0.04);
+  border-bottom: 1px solid var(--topbar-border);
   z-index: 90;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
 }
 @media (min-width: 768px) { .topbar { display: flex; } }
 
@@ -86,6 +88,8 @@ const items = [
   height: 30px;
   width: auto;
 }
+/* 暗色下 logo 是深色 SVG，反白保证可读 */
+:root[data-theme='dark'] .brand-logo { filter: invert(0.92); }
 
 .nav {
   display: flex;

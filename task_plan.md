@@ -154,3 +154,23 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] 浏览器抽查：首页卡片（渐变/状态戳/EXP 条 45%）、统计页（游戏评分 6 分入分布）
 - [x] GameProfileDetail 仅 status 变化时提交 → percent>=100 自动完成规则 UI 可达
 - **Status:** complete
+
+## 第三轮: 个性化两件套 — 暗色主题 + 偏好持久化 ✅ (2026-09-27)
+
+### Phase 1: 暗色主题
+- [x] src/utils/theme.js：localStorage('zace-theme') 持久化，未设置时跟随系统 prefers-color-scheme，main.js 挂载前应用防首帧闪白
+- [x] style.css 新增 :root[data-theme='dark'] 暖黑变量覆盖（color-scheme: dark，品类/状态饱和色不变）
+- [x] TopBar/MobileNav 背景令牌化（--topbar-bg/--nav-bg 等），ThemeToggle 组件双端接入（桌面右上角 + 移动底栏）
+- [x] 暗色下 logo 反白（invert）保证可读
+- **Status:** complete
+
+### Phase 2: 偏好持久化 + 排序
+- [x] WorkList 筛选/搜索/排序状态存 localStorage('zace-prefs-list')，恢复时校验有效性（失效标签筛选自动清空）
+- [x] 新增排序 UI：最近更新/评分优先/优先度/标题（客户端排序，评分与优先度 null 值沉底）
+- **Status:** complete
+
+### Phase 3: 验证
+- [x] vite build 通过（后端零改动，API 测试状态沿用 77/77）
+- [x] 浏览器实测：亮/暗首页与详情页截图；切主题 localStorage 写入 dark；评分排序断言 9→8→6；刷新后主题/排序/分类筛选全部恢复
+- [x] 测试数据与浏览器偏好已还原
+- **Status:** complete

@@ -66,6 +66,10 @@
   /* Dimensions */
   --topbar-height: 56px;
   --nav-height: 64px;
+  --topbar-bg: rgba(255,255,255,0.82);
+  --topbar-border: rgba(0,0,0,0.04);
+  --nav-bg: rgba(255,255,255,0.9);
+  --nav-border: rgba(0,0,0,0.04);
 
   /* Typography */
   --font-sans: 'DM Sans', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -79,6 +83,35 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
+
+/* 暗色主题 — 暖黑卡册：延续暖纸的色温，品类/状态饱和色不变 */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-primary: #16130F;
+  --bg-surface: #201C17;
+  --bg-surface-hover: #2A251F;
+  --bg-elevated: #262119;
+  --bg-input: #2A251F;
+
+  --text-primary: #F0EDE7;
+  --text-secondary: #B3ADA2;
+  --text-tertiary: #7A7468;
+
+  --primary-light: rgba(255, 107, 53, 0.16);
+
+  --frame-inner: rgba(255,255,255,0.06);
+  --frame-outer-line: rgba(255,255,255,0.05);
+
+  --color-border: rgba(255,255,255,0.07);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.45);
+  --shadow-lg: 0 16px 40px rgba(0,0,0,0.55);
+
+  --topbar-bg: rgba(22,19,15,0.82);
+  --topbar-border: rgba(255,255,255,0.06);
+  --nav-bg: rgba(22,19,15,0.9);
+  --nav-border: rgba(255,255,255,0.06);
+}
 
 body {
   font-family: var(--font-sans);

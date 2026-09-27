@@ -1,5 +1,6 @@
 <script setup>
 import { useRoute } from 'vue-router'
+import ThemeToggle from './ThemeToggle.vue'
 const route = useRoute()
 
 const tabs = [
@@ -43,6 +44,7 @@ const tabs = [
           </svg>
         </router-link>
       </template>
+      <ThemeToggle class="item theme-slot" />
     </div>
   </nav>
 </template>
@@ -52,10 +54,10 @@ const tabs = [
   position: fixed;
   bottom: 0; left: 0; right: 0;
   height: var(--nav-height);
-  background: rgba(255,255,255,0.9);
+  background: var(--nav-bg);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  border-top: 1px solid rgba(0,0,0,0.04);
+  border-top: 1px solid var(--nav-border);
   padding-bottom: env(safe-area-inset-bottom);
   padding-bottom: constant(safe-area-inset-bottom);
   z-index: 100;
@@ -84,6 +86,7 @@ const tabs = [
 
 .icon { width: 22px; height: 22px; }
 .label { font-size: 10px; line-height: 1; font-weight: 500; }
+.theme-slot { padding: 4px 10px; }
 
 .fab {
   position: relative;
