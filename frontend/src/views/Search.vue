@@ -288,7 +288,7 @@ function itemId(item) {
   background: var(--bg-surface);
   border: 1px solid var(--color-border);
 }
-.s-inp:focus { border-color: var(--text-tertiary); background: white; }
+.s-inp:focus { border-color: var(--text-tertiary); background: var(--bg-surface); }
 .search-btn {
   height: 40px;
   padding: 0 24px;

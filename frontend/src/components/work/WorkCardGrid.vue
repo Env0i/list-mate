@@ -27,27 +27,31 @@ const gameStatus = computed(() => {
   return props.work.game_status
 })
 
-const gpProgress = computed(() => {
-  if (props.work.category !== 'game') return null
-  return props.work.game_progress_value ?? props.work.progress_value ?? null
-})
-
 const st = computed(() => {
   const cat = props.work.category
   const key = cat === 'game' ? (gameStatus.value || 'wish') : (props.work.status || 'wish')
   return { label: STATUS_LABELS[cat]?.[key] || key, bg: STATUS_COLORS[key] || 'var(--s-wish)' }
 })
 
+// 游戏 GP 的 percent 型进度自带分母 100；其余品类按 total 折算
 const pct = computed(() => {
   const w = props.work
-  const val = w.progress_value ?? gpProgress.value
+  if (cat.value === 'game') {
+    const v = w.game_progress_value
+    return v == null ? 0 : Math.min(100, Math.round(v))
+  }
+  const val = w.progress_value
   if (!w.total || w.total <= 0 || val == null) return 0
   return Math.min(100, Math.round((val / w.total) * 100))
 })
 
 const progressLabel = computed(() => {
   const w = props.work
-  const val = w.progress_value ?? gpProgress.value
+  if (cat.value === 'game') {
+    const v = w.game_progress_value
+    return v == null ? '' : `${Math.round(v)}%`
+  }
+  const val = w.progress_value
   if (val == null) return ''
   const t = w.total ? ` / ${w.total}` : ''
   const pt = pct.value > 0 ? ` (${pct.value}%)` : ''
@@ -125,7 +129,7 @@ const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '�
       <!-- Status stamp -->
       <div class="status-stamp" :style="{ background: st.bg }">{{ st.label }}</div>
       <!-- EXP bar overlay -->
-      <div v-if="work.progress_value != null || gpProgress != null" class="exp-wrap">
+      <div v-if="cat === 'game' || work.progress_value != null" class="exp-wrap">
         <div class="exp-rail">
           <div class="exp-fill" :style="{ width: pct + '%', background: categoryGradient(cat, 0) }" />
         </div>
