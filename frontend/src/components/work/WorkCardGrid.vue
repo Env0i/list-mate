@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { worksApi } from '../../api/client'
 import { STATUS_LABELS, STATUS_COLORS, categoryGradient } from '../../constants/work'
+import { showToast } from '../../utils/toast'
 
 const props = defineProps({ work: Object })
 
@@ -53,6 +54,31 @@ const progressLabel = computed(() => {
   return `${val}${t}${pt}`
 })
 
+// 卡片快捷进度：动漫 +1 集 / 小说 +1 章 / 漫画 +1 卷 / 游戏 +5%
+const step = computed(() => cat.value === 'game' ? 5 : 1)
+const busy = computed(() => props.work.__busy)
+
+async function increment(ev) {
+  ev.stopPropagation()
+  if (props.work.__busy) return
+  props.work.__busy = true
+  try {
+    const next = Math.min(
+      (props.work.progress_value ?? 0) + step.value,
+      props.work.total || Infinity,
+    )
+    const { data } = await worksApi.update(props.work.id, { progress_value: next })
+    props.work.progress_value = data.progress_value
+    props.work.status = data.status
+    props.work.auto_completed = data.auto_completed
+  } catch (e) {
+    console.error('progress +1 failed', e)
+    showToast('进度更新失败', 'error')
+  } finally {
+    props.work.__busy = false
+  }
+}
+
 const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '游戏' }
 </script>
 
@@ -83,6 +109,7 @@ const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '�
           <div class="exp-fill" :style="{ width: pct + '%', background: categoryGradient(cat, 0) }" />
         </div>
         <span class="exp-label">{{ progressLabel }}</span>
+        <button class="exp-plus" :disabled="busy" title="进度 +1" @click="increment">+1</button>
       </div>
     </div>
     <div class="info">
@@ -213,6 +240,22 @@ const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '�
   font-variant-numeric: tabular-nums;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
+.exp-plus {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  transition: all 0.15s;
+}
+.exp-plus:hover { background: rgba(255,255,255,0.32); transform: scale(1.08); }
+.exp-plus:active { transform: scale(0.94); }
+.exp-plus:disabled { opacity: 0.5; }
 
 /* Info — more breathing room */
 .info {

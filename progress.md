@@ -247,3 +247,20 @@
 - 全量回归：api_full_test 78/78、vite build 通过、测试数据清零
 - 打 annotated tag v1.0.0：十二轮迭代的干净还原点（核心功能完整 + 备份/还原闭环 + 24 处审计问题修复）
 - 部署状态：成果在本地 master，用户确认自行执行 python deploy.py
+
+## 2026-09-27 自主接管第十四轮：卡片快捷进度 +1
+
+### 动机
+追番更新一集是本应用最高频操作，原流程"进详情→编辑→改数字→保存"六步；
+现在列表卡片 EXP 条上一个 +1 按钮直接完成，且到达 total 时自动完成规则联动、
+状态戳即时变化——高频摩擦点消除。
+
+### 实现
+- WorkCardGrid exp-wrap 内加 28px 圆钮；步长按品类（ep/chapter/volume +1、game +5%）
+- 就地更新 props.work 的 progress_value/status/auto_completed，父列表无需刷新
+- progress 上限钳制在 total（有 total 时），防误触溢出
+
+### 过程记录
+- IAB 合成点击（locator.click/cua.click）对该按钮不触发 Vue 事件（elementFromPoint
+  证明无遮挡、原生 el.click() 正常）——判定为环境合成事件怪癖，功能本身无问题；
+  已补入环境怪癖记忆
