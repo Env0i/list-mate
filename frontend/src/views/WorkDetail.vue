@@ -7,6 +7,7 @@ import ProgressBar from '../components/work/ProgressBar.vue'
 import PlatformSelector from '../components/work/PlatformSelector.vue'
 import { getPlatformIconUrl } from '../utils/platformIcons'
 import { showToast } from '../utils/toast'
+import { emptyToNull } from '../utils/payload'
 
 const route = useRoute()
 const router = useRouter()
@@ -161,7 +162,7 @@ function closeEdit() {
 async function saveEdit() {
   saving.value = true
   try {
-    const payload = {
+    const payload = emptyToNull({
       title: form.value.title,
       category: form.value.category,
       sub_category: form.value.sub_category,
@@ -181,8 +182,15 @@ async function saveEdit() {
       finish_date: form.value.finish_date,
       priority: form.value.priority,
       is_free: form.value.is_free,
-      external_url: form.value.external_url,
+      external_links: form.value.external_links,
       tag_ids: selectedTagIds.value,
+    }, [
+      'status', 'total', 'progress_value', 'priority',
+      'purchase_price', 'playtime_hours', 'replay_count', 'rating',
+    ])
+    // 游戏状态存在 GameProfile 上且不可为空；无配置时不要提交 status
+    if (form.value.category === 'game' && payload.status == null) {
+      delete payload.status
     }
     const res = await worksApi.update(route.params.id, payload)
     work.value = { ...work.value, ...res.data }
@@ -555,7 +563,8 @@ onMounted(load)
                         <label class="mf-label mf-sm">
                           <span>状态</span>
                           <select v-model="form.status">
-                            <option value="">—</option>
+                            <!-- 游戏状态存在 GameProfile 上且不可为空，不提供清空选项 -->
+                            <option v-if="work?.category !== 'game'" value="">—</option>
                             <option v-for="(label, key) in statusLabels[work?.category]" :key="key" :value="key">{{ label }}</option>
                           </select>
                         </label>

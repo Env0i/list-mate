@@ -81,4 +81,6 @@ class Work(Base):
 
     game_profiles = relationship("GameProfile", back_populates="work", cascade="all, delete-orphan")
     work_tags = relationship("WorkTag", back_populates="work", cascade="all, delete-orphan")
-    timeline_entries = relationship("TimelineEntry", cascade="all, delete-orphan", passive_deletes=True)
+    # 注意：不能加 passive_deletes——timeline_entries 的 FK 没有数据库级 ON DELETE CASCADE，
+    # PRAGMA foreign_keys=ON 下交给数据库会 IntegrityError，必须由 ORM 载入并逐条删除
+    timeline_entries = relationship("TimelineEntry", cascade="all, delete-orphan")

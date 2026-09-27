@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { worksApi } from '../api/client'
 import { showToast } from '../utils/toast'
+import { emptyToNull } from '../utils/payload'
 import PlatformSelector from '../components/work/PlatformSelector.vue'
 
 const router = useRouter()
@@ -61,7 +62,12 @@ async function submit() {
   saving.value = true
   error.value = ''
   try {
-    const { data } = await worksApi.create(form.value)
+    const payload = emptyToNull(form.value, [
+      'status', 'total', 'priority', 'purchase_price',
+      'playtime_hours', 'replay_count', 'rating',
+      'start_date', 'finish_date', 'purchase_date',
+    ])
+    const { data } = await worksApi.create(payload)
     showToast('作品已添加')
     router.push(`/works/${data.id}`)
   } catch (e) {

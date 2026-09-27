@@ -1,7 +1,7 @@
 # Task Plan: list-mate
 
 ## Current Phase
-Iter 2 已完成，待用户验证
+P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件清理 + Bangumi type 映射修正
 
 ## Iter 1: 卡册风全面重构 ✅
 全部完成，已提交 `4f6ccc0`。
@@ -110,4 +110,24 @@ Iter 2 已完成，待用户验证
 ### Phase 5: 前端 — 封面上传 + 数据导出
 - [x] WorkDetail 封面下方"更换封面"按钮
 - [x] Stats 页 JSON/CSV 导出按钮
+- **Status:** complete
+
+## P0 修复: 级联删除 500 + 前端空值 422 ✅ (2026-09-27)
+
+### Phase 1: 后端级联删除
+- [x] models/work.py 移除 timeline_entries 的 passive_deletes（FK 无数据库级 CASCADE，须 ORM 删除）
+- [x] game_profiles.py delete 路由先清理 TimelineEntry.game_profile_id
+- **Status:** complete
+
+### Phase 2: 前端空值归一化
+- [x] 新增 utils/payload.js emptyToNull（空串→null）
+- [x] Add.vue / Search.vue / WorkDetail.vue 提交前归一化数字/状态字段
+- [x] WorkDetail 幽灵字段 external_url → external_links（编辑外部链接原本静默丢失）
+- [x] 游戏作品隐藏"—"清空选项；无配置时不提交 status
+- **Status:** complete
+
+### Phase 3: 验证
+- [x] 修复前后对照复现：DELETE 500 → 204
+- [x] api_full_test.py 77/77（报告已刷新）
+- [x] 浏览器实测：只填标题提交成功；编辑设置/清空状态与总量保存成功（抓包核对 payload）
 - **Status:** complete

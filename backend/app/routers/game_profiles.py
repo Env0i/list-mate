@@ -114,5 +114,8 @@ def delete_game_profile(profile_id: int, db: Session = Depends(get_db)):
     gp = db.query(GameProfile).get(profile_id)
     if not gp:
         raise HTTPException(status_code=404, detail="GameProfile 不存在")
+    # 时间线以 game_profile_id 关联且 FK 无数据库级级联，须先手动清理
+    from ..models.timeline import TimelineEntry
+    db.query(TimelineEntry).filter(TimelineEntry.game_profile_id == profile_id).delete()
     db.delete(gp)
     db.commit()

@@ -85,3 +85,19 @@
 | What's the goal? | Iter 1 核心记录跑通 |
 | What have I learned? | See findings.md |
 | What have I done? | PRD review, design decisions, design.md written |
+
+## 2026-09-27 自主接管第一轮：P0 修复
+
+### 修复内容
+1. **级联删除 FK 500（后端）**
+   - 复现：DELETE /works/{id} 与带时间线的 DELETE /game-profiles/{id} 均 500，日志 `sqlite3.IntegrityError: FOREIGN KEY constraint failed`（passive_deletes=True 信任数据库级联，但 timeline FK 无 ondelete=CASCADE，且 PRAGMA foreign_keys=ON）
+   - 修复：work.py 移除 passive_deletes；game_profiles.py 删除时先清时间线
+2. **前端空值 422**
+   - 复现：Add 页不选状态提交必 422（schema validator 拒绝 ""，validator 后于 Add 页引入）；编辑弹窗清空状态/总量同理
+   - 修复：utils/payload.js emptyToNull + 三视图接入；附带修 external_url 幽灵字段、游戏状态清空防护
+3. **测试**：api_full_test.py 77/77，报告已刷新；测试产生的数据已清理（库恢复为空）
+
+### 遗留事项
+- api_full_test.py 的 "Get work by valid ID" 依赖库中已有作品，空库首跑会挂 1 条（建议自建数据）
+- dev server 仍在后台运行（后端 8001 / 前端 5173）
+- P1 待办：状态色 4 份复制收敛到 --s-* 变量、死组件 Sidebar.vue/StatusBadge.vue 删除、Bangumi type 映射后端修正、统计页补游戏评分、rating 范围校验、page_size 100 静默截断

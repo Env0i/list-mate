@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { bangumiApi, worksApi } from '../api/client'
+import { emptyToNull } from '../utils/payload'
 
 const router = useRouter()
 
@@ -64,7 +65,7 @@ async function confirmCreate() {
   creating.value = true
   error.value = ''
   try {
-    const { data } = await worksApi.create(form.value)
+    const { data } = await worksApi.create(emptyToNull(form.value, ['total']))
     showDialog.value = false
     router.push(`/works/${data.id}`)
   } catch (e) {
