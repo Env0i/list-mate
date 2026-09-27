@@ -224,3 +224,18 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
       先 unjson 再映射中文标签（Stats 页同病）
 - [x] 验证：build 通过；浏览器实测历史渲染（"状态变更 在看 → 暂停 1分钟前"），变更即时入历史
 - **Status:** complete
+
+## 第八轮: 导出完整性核对 + 历史功能回归 ✅ (2026-09-27)
+
+### 导出完整性（库内 vs 导出逐项比对）
+- [x] JSON 补缺失字段：is_free、purchase_date、bangumi_id、auto_completed；GP 补 auto_completed、sort_order
+- [x] CSV 补"购买时间""免费"列；0 值不再被 `or ""` 吞掉（None 才写空）；整数值浮点格式化为整数（17.0→17）
+- [x] CSV 加 UTF-8 BOM（无 BOM 时 Excel 打开中文乱码）
+- [x] 比对结果：PASS——JSON 全字段=detail 接口、GP 全字段一致、CSV 边界值（0 进度/0 评分/0 优先度）正确落列
+- **Status:** complete
+
+### 历史功能回归
+- [x] 详情页历史卡渲染正常（"＋添加 回归检查-动画 0分钟前"）
+- [x] Stats 操作记录正常（共享工具改动后无回归，时区修复在聚合页同样生效）
+- [x] api_full_test.py 77/77
+- **Status:** complete

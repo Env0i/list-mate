@@ -38,6 +38,8 @@ def export_json(db: Session = Depends(get_db)):
                 "source": gp.source,
                 "mods_list": gp.mods_list,
                 "notes": gp.notes,
+                "auto_completed": gp.auto_completed,
+                "sort_order": gp.sort_order,
             }
             for gp in w.game_profiles
         ]
@@ -57,10 +59,14 @@ def export_json(db: Session = Depends(get_db)):
             "platform": w.platform,
             "priority": w.priority,
             "purchase_platform": w.purchase_platform,
+            "purchase_date": w.purchase_date,
             "purchase_price": w.purchase_price,
             "playtime_hours": w.playtime_hours,
             "replay_count": w.replay_count,
             "external_links": w.external_links,
+            "is_free": w.is_free,
+            "auto_completed": w.auto_completed,
+            "bangumi_id": w.bangumi_id,
             "tags": tags,
             "game_profiles": gps,
             "created_at": w.created_at.isoformat(),
@@ -84,7 +90,7 @@ def export_csv(db: Session = Depends(get_db)):
         "标题", "品类", "子分类", "状态", "评分", "评价",
         "总进度", "当前进度", "进度单位", "简介",
         "开始时间", "完成时间", "平台", "优先度",
-        "购买平台", "购买价格", "游戏时长", "重刷次数",
+        "购买平台", "购买价格", "购买时间", "免费", "游戏时长", "重刷次数",
         "标签", "创建时间", "更新时间",
     ])
     for w in works:
@@ -96,26 +102,29 @@ def export_csv(db: Session = Depends(get_db)):
             w.status.value if w.status else "",
             w.rating,
             w.review or "",
-            w.total or "",
-            w.progress_value or "",
+            "" if w.total is None else w.total,
+            "" if w.progress_value is None else (int(w.progress_value) if float(w.progress_value).is_integer() else w.progress_value),
             w.progress_unit.value if hasattr(w.progress_unit, "value") else w.progress_unit,
             w.summary or "",
             w.start_date or "",
             w.finish_date or "",
             w.platform or "",
-            w.priority or "",
+            "" if w.priority is None else w.priority,
             w.purchase_platform or "",
-            w.purchase_price or "",
-            w.playtime_hours or "",
-            w.replay_count or "",
+            "" if w.purchase_price is None else w.purchase_price,
+            w.purchase_date or "",
+            "是" if w.is_free else "",
+            "" if w.playtime_hours is None else w.playtime_hours,
+            "" if w.replay_count is None else w.replay_count,
             tags,
             w.created_at.isoformat() if w.created_at else "",
             w.updated_at.isoformat() if w.updated_at else "",
         ])
 
     output.seek(0)
+    # UTF-8 BOM：无 BOM 时 Excel 直接打开中文 CSV 会乱码
     return StreamingResponse(
-        iter([output.getvalue()]),
+        iter(["﻿" + output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=list-mate-export.csv"},
     )
