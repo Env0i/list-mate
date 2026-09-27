@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { worksApi } from '../api/client'
 import { showToast } from '../utils/toast'
 import { emptyToNull } from '../utils/payload'
+import { STATUS_LABELS } from '../constants/work'
 import PlatformSelector from '../components/work/PlatformSelector.vue'
 
 const router = useRouter()
@@ -40,12 +41,7 @@ const categories = [
   { key: 'game', label: '游戏', unit: 'percent' },
 ]
 
-const statusLabels = {
-  anime: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  novel: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  comic: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  game: { wish: '想玩', playing: '在玩', completed: '通关', dropped: '弃坑', wait_buy: '等购买', wait_sale: '等折扣' },
-}
+const statusLabels = STATUS_LABELS
 
 const unitLabels = { ep: '集', chapter: '章', volume: '卷', percent: '%' }
 

@@ -53,14 +53,25 @@ def get_stats(db: Session = Depends(get_db)):
             status_counts.append({"status": key, "count": n})
 
     # Rating distribution (0-10, including null as "unrated")
+    # 游戏的评分挂在 GameProfile 上，与 Work 评分合并统计
     rating_rows = (
         db.query(Work.rating, func.count(Work.id))
         .group_by(Work.rating)
         .all()
     )
-    rating_distribution = []
+    rating_map = {}
     for r, n in rating_rows:
-        rating_distribution.append({"rating": r if r is not None else -1, "count": n})
+        key = r if r is not None else -1
+        rating_map[key] = rating_map.get(key, 0) + n
+    gp_rating_rows = (
+        db.query(GameProfile.rating, func.count(GameProfile.id))
+        .group_by(GameProfile.rating)
+        .all()
+    )
+    for r, n in gp_rating_rows:
+        key = r if r is not None else -1
+        rating_map[key] = rating_map.get(key, 0) + n
+    rating_distribution = [{"rating": k, "count": v} for k, v in rating_map.items()]
 
     return {
         "total_works": total_works,

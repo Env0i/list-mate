@@ -27,7 +27,7 @@ def list_works(
     tag_id: int | None = None,
     q: str | None = None,
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=500),
     db: Session = Depends(get_db),
 ):
     query = db.query(Work).options(
@@ -65,6 +65,7 @@ def list_works(
         item_data["tag_ids"] = [wt.tag_id for wt in w.work_tags]
         if w.category == "game" and w.game_profiles:
             item_data["game_status"] = w.game_profiles[0].status.value if hasattr(w.game_profiles[0].status, "value") else w.game_profiles[0].status
+            item_data["game_progress_value"] = w.game_profiles[0].progress_value
         items.append(WorkListItem(**item_data))
 
     return PaginatedWorks(

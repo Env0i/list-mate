@@ -15,7 +15,13 @@ def record_timeline(
     new_value=None,
     game_profile_id: int | None = None,
 ):
-    """Record a timeline entry. old/new values are serialized to JSON strings."""
+    """Record a timeline entry. old/new values are serialized to JSON strings.
+
+    变更类记录新旧值相同时跳过（如手动标记完成后再触发自动完成规则，
+    避免 completed→completed 的垃圾条目）；created 记录不适用此规则。
+    """
+    if action_type != "created" and old_value == new_value:
+        return None
     entry = TimelineEntry(
         work_id=work_id,
         game_profile_id=game_profile_id,

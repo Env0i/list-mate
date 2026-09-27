@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 from typing import Optional
 
 from ..models.game_profile import GameStatus, ProgressType
@@ -10,7 +10,7 @@ class GameProfileCreate(BaseModel):
     progress_value: Optional[float] = None
     progress_type: Optional[str] = None
     status: Optional[str] = None
-    rating: Optional[int] = None
+    rating: Optional[int] = Field(None, ge=0, le=10)
     review: Optional[str] = None
     start_date: Optional[str] = None
     finish_date: Optional[str] = None
@@ -46,7 +46,7 @@ class GameProfileUpdate(BaseModel):
     progress_value: Optional[float] = None
     progress_type: Optional[str] = None
     status: Optional[str] = None
-    rating: Optional[int] = None
+    rating: Optional[int] = Field(None, ge=0, le=10)
     review: Optional[str] = None
     start_date: Optional[str] = None
     finish_date: Optional[str] = None

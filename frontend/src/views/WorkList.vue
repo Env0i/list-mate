@@ -16,7 +16,7 @@ const activeTagId = ref(null)
 onMounted(async () => {
   try {
     const [worksRes, tagsRes] = await Promise.all([
-      worksApi.list({ page_size: 100 }),
+      worksApi.list({ page_size: 500 }),
       tagsApi.list(),
     ])
     works.value = worksRes.data.items

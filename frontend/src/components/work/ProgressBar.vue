@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { categoryGradient } from '../../constants/work'
 
 const props = defineProps({
   current: [Number, null], total: [Number, null], category: String,
@@ -15,19 +16,13 @@ const label = computed(() => {
   const t = props.total ? ` / ${props.total}` : ''
   return `${props.current}${t}`
 })
-
-const gradMap = {
-  anime: 'linear-gradient(90deg, #FF1A5E, #FF6B8A)',
-  novel: 'linear-gradient(90deg, #3366FF, #6B96FF)',
-  comic: 'linear-gradient(90deg, #00CC66, #4DE69E)',
-  game: 'linear-gradient(90deg, #FF7A00, #FFA755)',
-}
+const fillBg = computed(() => categoryGradient(props.category || 'anime', 90))
 </script>
 
 <template>
   <div class="exp-wrap">
     <div class="exp-rail">
-      <div class="exp-fill" :style="{ width: pct + '%', background: gradMap[category] || gradMap.anime }">
+      <div class="exp-fill" :style="{ width: pct + '%', background: fillBg }">
         <div class="exp-shine" />
       </div>
     </div>

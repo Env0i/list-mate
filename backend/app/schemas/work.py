@@ -1,6 +1,6 @@
 from __future__ import annotations
 from datetime import datetime
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 from typing import Optional
 
 from ..models.work import Category, CoverSource, ProgressUnit, WorkStatus
@@ -17,7 +17,7 @@ class WorkCreate(BaseModel):
     total: Optional[int] = None
     progress_value: Optional[float] = None
     status: Optional[str] = None
-    rating: Optional[int] = None
+    rating: Optional[int] = Field(None, ge=0, le=10)
     review: Optional[str] = None
     bangumi_id: Optional[int] = None
     cover_url: Optional[str] = None
@@ -71,7 +71,7 @@ class WorkUpdate(BaseModel):
     total: Optional[int] = None
     progress_value: Optional[float] = None
     status: Optional[str] = None
-    rating: Optional[int] = None
+    rating: Optional[int] = Field(None, ge=0, le=10)
     review: Optional[str] = None
     bangumi_id: Optional[int] = None
     cover_url: Optional[str] = None
@@ -147,6 +147,7 @@ class WorkListItem(BaseModel):
     tag_ids: list[int] = []
     is_free: bool = False
     game_status: str = "wish"
+    game_progress_value: Optional[float] = None
 
     model_config = {"from_attributes": True}
 

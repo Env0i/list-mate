@@ -8,6 +8,7 @@ import PlatformSelector from '../components/work/PlatformSelector.vue'
 import { getPlatformIconUrl } from '../utils/platformIcons'
 import { showToast } from '../utils/toast'
 import { emptyToNull } from '../utils/payload'
+import { STATUS_LABELS, STATUS_COLORS } from '../constants/work'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,17 +22,8 @@ const allTags = ref([])
 const selectedTagIds = ref([])
 const tagLoading = ref(false)
 
-const statusLabels = {
-  anime: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  novel: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  comic: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  game: { wish: '想玩', playing: '在玩', completed: '通关', dropped: '弃坑', wait_buy: '等购买', wait_sale: '等折扣' },
-}
-const statusBg = {
-  wish: '#A39F98', watching: '#3366FF', playing: '#3366FF',
-  completed: '#00B85A', paused: '#FFB800',
-  dropped: '#FF4444', wait_buy: '#FFB800', wait_sale: '#FF8C00',
-}
+const statusLabels = STATUS_LABELS
+const statusBg = STATUS_COLORS
 
 const progressUnitMap = { anime: '集', novel: '章', comic: '卷' }
 
@@ -63,12 +55,12 @@ const stLabel = computed(() => {
 })
 
 const stBg = computed(() => {
-  if (!work.value) return '#A39F98'
+  if (!work.value) return 'var(--s-wish)'
   const cat = work.value.category
   const key = cat === 'game'
     ? work.value.game_profiles?.[0]?.status || 'wish'
     : work.value.status || 'wish'
-  return statusBg[key] || '#A39F98'
+  return statusBg[key] || 'var(--s-wish)'
 })
 
 function gpProgressLabel(gp) {
@@ -467,11 +459,11 @@ onMounted(load)
             v-for="gp in work.game_profiles"
             :key="gp.id"
             class="gp-bar"
-            :style="{ '--gp-accent': statusBg[gp.status] || '#A39F98' }"
+            :style="{ '--gp-accent': statusBg[gp.status] || 'var(--s-wish)' }"
             @click="router.push(`/works/${work.id}/game-profiles/${gp.id}`)"
           >
             <span class="gp-name">{{ gp.name }}</span>
-            <span class="gp-st" :style="{ background: statusBg[gp.status] || '#A39F98' }">
+            <span class="gp-st" :style="{ background: statusBg[gp.status] || 'var(--s-wish)' }">
               {{ statusLabels.game?.[gp.status] || gp.status }}
             </span>
             <div class="gp-prog">

@@ -21,6 +21,10 @@
   --c-novel: #3366FF;
   --c-comic: #00CC66;
   --c-game: #FF7A00;
+  --c-anime-light: #FF6B8A;
+  --c-novel-light: #6B96FF;
+  --c-comic-light: #4DE69E;
+  --c-game-light: #FFA755;
   --c-anime-bg: rgba(255, 26, 94, 0.1);
   --c-novel-bg: rgba(51, 102, 255, 0.1);
   --c-comic-bg: rgba(0, 204, 102, 0.1);
@@ -36,6 +40,7 @@
   --s-completed: #00B85A;
   --s-paused: #FFB800;
   --s-dropped: #FF4444;
+  --s-wait-sale: #FF8C00;
   --s-wish-bg: rgba(163, 159, 152, 0.1);
   --s-watching-bg: rgba(51, 102, 255, 0.08);
   --s-completed-bg: rgba(0, 184, 90, 0.08);

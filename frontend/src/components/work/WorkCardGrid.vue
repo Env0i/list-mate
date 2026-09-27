@@ -1,23 +1,17 @@
 <script setup>
 import { computed } from 'vue'
 import { worksApi } from '../../api/client'
+import { STATUS_LABELS, STATUS_COLORS, categoryGradient } from '../../constants/work'
 
 const props = defineProps({ work: Object })
 
 const cat = computed(() => props.work.category)
 
-const gradientMap = {
-  anime: 'linear-gradient(135deg, #FF1A5E, #FF6B8A)',
-  novel: 'linear-gradient(135deg, #3366FF, #6B96FF)',
-  comic: 'linear-gradient(135deg, #00CC66, #4DE69E)',
-  game: 'linear-gradient(135deg, #FF7A00, #FFA755)',
-}
-
 const coverStyle = computed(() => {
   if (props.work.cover_url) {
     return { background: `url(${worksApi.coverUrl(props.work.id)}) center/cover no-repeat` }
   }
-  return { background: gradientMap[cat.value] }
+  return { background: categoryGradient(cat.value, 135) }
 })
 
 const iconMap = {
@@ -25,19 +19,6 @@ const iconMap = {
   novel: 'M20 12l-6 6 6 6M28 12l6 6-6 6',
   comic: 'M18 20l6-8 4 4 4-4',
   game: 'M22 18l8 5-8 5V18zM22 14V6l8 5-8 3z',
-}
-
-const statusLabels = {
-  anime: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  novel: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  comic: { wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了' },
-  game: { wish: '想玩', playing: '在玩', completed: '通关', dropped: '弃坑', wait_buy: '等购买', wait_sale: '等折扣' },
-}
-
-const statusBg = {
-  wish: '#A39F98', watching: '#3366FF', playing: '#3366FF',
-  completed: '#00B85A', paused: '#FFB800',
-  dropped: '#FF4444', wait_buy: '#FFB800', wait_sale: '#FF8C00',
 }
 
 const gameStatus = computed(() => {
@@ -53,7 +34,7 @@ const gpProgress = computed(() => {
 const st = computed(() => {
   const cat = props.work.category
   const key = cat === 'game' ? (gameStatus.value || 'wish') : (props.work.status || 'wish')
-  return { label: statusLabels[cat]?.[key] || key, bg: statusBg[key] || '#A39F98' }
+  return { label: STATUS_LABELS[cat]?.[key] || key, bg: STATUS_COLORS[key] || 'var(--s-wish)' }
 })
 
 const pct = computed(() => {
@@ -99,7 +80,7 @@ const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '�
       <!-- EXP bar overlay -->
       <div v-if="work.progress_value != null || gpProgress != null" class="exp-wrap">
         <div class="exp-rail">
-          <div class="exp-fill" :style="{ width: pct + '%', background: `linear-gradient(90deg, ${gradientMap[cat].replace('135deg', '0deg')})` }" />
+          <div class="exp-fill" :style="{ width: pct + '%', background: categoryGradient(cat, 0) }" />
         </div>
         <span class="exp-label">{{ progressLabel }}</span>
       </div>

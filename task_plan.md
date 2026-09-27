@@ -131,3 +131,26 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] api_full_test.py 77/77（报告已刷新）
 - [x] 浏览器实测：只填标题提交成功；编辑设置/清空状态与总量保存成功（抓包核对 payload）
 - **Status:** complete
+
+## P1 修复: 常量收敛 + 数据逻辑补漏 ✅ (2026-09-27 第二轮)
+
+### Phase 1: 前端一致性
+- [x] 新增 src/constants/work.js（STATUS_LABELS/STATUS_COLORS/categoryGradient），6 个视图/组件删除本地副本
+- [x] style.css 补 --c-*-light 与 --s-wait-sale 令牌
+- [x] 删除死组件 Sidebar.vue、StatusBadge.vue（全仓无引用）
+- **Status:** complete
+
+### Phase 2: 后端数据逻辑
+- [x] rating 0-10 范围校验（仅 Create/Update，响应模型不拦存量数据）
+- [x] 统计页评分分布合并 GameProfile 评分
+- [x] WorkListItem/works.py 补 game_progress_value（修复游戏卡 EXP 条幽灵字段）
+- [x] record_timeline 变更类新旧值相同跳过（杜绝 completed→completed 垃圾记录）
+- [x] page_size 上限 100→500（前后端），列表不再静默截断
+- [x] bangumi.py type 映射注释纠错
+- **Status:** complete
+
+### Phase 3: 验证
+- [x] api_full_test.py 77/77；vite build 通过
+- [x] 浏览器抽查：首页卡片（渐变/状态戳/EXP 条 45%）、统计页（游戏评分 6 分入分布）
+- [x] GameProfileDetail 仅 status 变化时提交 → percent>=100 自动完成规则 UI 可达
+- **Status:** complete

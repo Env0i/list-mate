@@ -14,7 +14,7 @@ BANGUMI_HEADERS = {
 @router.get("/bangumi/search", response_model=BangumiSearchResponse)
 def search_bangumi(
     q: str = Query(min_length=1),
-    type: int | None = Query(None, description="1=anime 2=comic 3=game 5=novel"),
+    type: int | None = Query(None, description="Bangumi 类型：1=书籍(含小说/漫画) 2=动画 3=音乐 4=游戏"),
     db=None,  # unused, kept for FastAPI DI consistency
 ):
     body = {"keyword": q}

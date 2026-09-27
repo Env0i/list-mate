@@ -3,12 +3,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { worksApi, gameProfilesApi, attachmentsApi } from '../api/client'
 import { showToast } from '../utils/toast'
+import { emptyToNull } from '../utils/payload'
+import { STATUS_LABELS, STATUS_COLORS } from '../constants/work'
 
 const route = useRoute()
 const router = useRouter()
 
 const gp = ref(null)
 const workTitle = ref('')
+const originalStatus = ref(null)
 const loading = ref(true)
 const saving = ref(false)
 const deleting = ref(false)
@@ -17,14 +20,7 @@ const modInputText = ref('')
 const attachments = ref([])
 const uploading = ref(false)
 
-const statusOptions = [
-  { key: 'wish', label: '想玩' },
-  { key: 'playing', label: '在玩' },
-  { key: 'completed', label: '通关' },
-  { key: 'dropped', label: '弃坑' },
-  { key: 'wait_buy', label: '等购买' },
-  { key: 'wait_sale', label: '等折扣' },
-]
+const statusOptions = Object.entries(STATUS_LABELS.game).map(([key, label]) => ({ key, label }))
 
 const progressTypes = [
   { key: 'none', label: '纯状态', desc: '不追踪数字进度' },
@@ -32,11 +28,7 @@ const progressTypes = [
   { key: 'percent', label: '百分比', desc: '记录完成百分比' },
 ]
 
-const statusBgMap = {
-  wish: '#A39F98', playing: '#3366FF',
-  completed: '#00B85A', dropped: '#FF4444',
-  wait_buy: '#FFB800', wait_sale: '#FF8C00',
-}
+const statusBgMap = STATUS_COLORS
 
 const progressLabel = computed(() => {
   if (!gp.value) return ''
@@ -58,6 +50,7 @@ async function load() {
   try {
     const { data } = await gameProfilesApi.get(route.params.gpid)
     gp.value = data
+    originalStatus.value = data.status
     const workRes = await worksApi.get(data.work_id)
     workTitle.value = workRes.data.title
     await loadAttachments()
@@ -143,10 +136,11 @@ function removeMod(mod) {
 async function save() {
   saving.value = true
   try {
-    const body = {
+    const body = emptyToNull({
       name: gp.value.name,
       progress_value: gp.value.progress_value,
       progress_type: gp.value.progress_type,
+      // 仅在状态被用户改动时提交，否则后端视为"用户显式设状态"而跳过自动完成规则
       status: gp.value.status,
       rating: gp.value.rating,
       review: gp.value.review,
@@ -156,6 +150,9 @@ async function save() {
       source: gp.value.source,
       mods_list: gp.value.mods_list,
       notes: gp.value.notes,
+    }, ['progress_value', 'rating', 'playtime_hours'])
+    if (gp.value.status === originalStatus.value) {
+      delete body.status
     }
     const { data } = await gameProfilesApi.update(route.params.gpid, body)
     gp.value = data

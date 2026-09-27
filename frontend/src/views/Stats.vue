@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { statsApi, timelineApi } from '../api/client'
 import { exportApi } from '../api/client'
+import { STATUS_LABELS_FLAT, STATUS_COLORS } from '../constants/work'
 
 const stats = ref(null)
 const timeline = ref([])
@@ -40,15 +41,8 @@ const catIcons = {
   game: '★',
 }
 
-const statusLabels = {
-  wish: '想看', watching: '在看', completed: '看完', paused: '暂停', dropped: '弃了',
-  playing: '在玩', wait_buy: '等购买', wait_sale: '等折扣',
-}
-const statusColors = {
-  wish: 'var(--s-wish)', watching: 'var(--s-watching)', completed: 'var(--s-completed)',
-  paused: 'var(--s-paused)', dropped: 'var(--s-dropped)',
-  playing: 'var(--s-watching)', wait_buy: 'var(--s-paused)', wait_sale: '#FF8C00',
-}
+const statusLabels = STATUS_LABELS_FLAT
+const statusColors = STATUS_COLORS
 
 const actionLabels = {
   created: '添加', status_change: '状态变更', rating_change: '评分变更',
