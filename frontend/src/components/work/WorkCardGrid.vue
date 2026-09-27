@@ -1,6 +1,6 @@
 <script setup>
 import { computed } from 'vue'
-import { worksApi } from '../../api/client'
+import { worksApi, gameProfilesApi } from '../../api/client'
 import { STATUS_LABELS, STATUS_COLORS, categoryGradient } from '../../constants/work'
 import { showToast } from '../../utils/toast'
 
@@ -57,22 +57,43 @@ const progressLabel = computed(() => {
 // 卡片快捷进度：动漫 +1 集 / 小说 +1 章 / 漫画 +1 卷 / 游戏 +5%
 const step = computed(() => cat.value === 'game' ? 5 : 1)
 const busy = computed(() => props.work.__busy)
+// auto_completed 状态回退时恢复到的"进行中"状态
+const ACTIVE_STATUS = { anime: 'watching', novel: 'watching', comic: 'watching', game: 'playing' }
 
-async function increment(ev) {
+async function stepProgress(ev, dir) {
   ev.stopPropagation()
   if (props.work.__busy) return
   props.work.__busy = true
   try {
-    const next = Math.min(
-      (props.work.progress_value ?? 0) + step.value,
-      props.work.total || Infinity,
-    )
-    const { data } = await worksApi.update(props.work.id, { progress_value: next })
-    props.work.progress_value = data.progress_value
-    props.work.status = data.status
-    props.work.auto_completed = data.auto_completed
+    const w = props.work
+    // 游戏的进度基数取 GP（game_progress_value），其余品类取 Work 的 progress_value
+    const cur = (cat.value === 'game' ? (w.game_progress_value ?? 0) : (w.progress_value ?? 0))
+    let next = cur + dir * step.value
+    if (dir > 0 && w.total) next = Math.min(next, w.total)
+    next = Math.max(next, 0)
+    if (next === cur) return
+
+    // 游戏进度挂在 GameProfile 上；其余品类在 Work 上
+    if (cat.value === 'game') {
+      const gpid = w.game_profile_id
+      if (!gpid) return
+      const payload = { progress_value: next }
+      // 自动完成后的回退：状态一并恢复"进行中"
+      if (dir < 0 && w.auto_completed) payload.status = ACTIVE_STATUS.game
+      const { data } = await gameProfilesApi.update(gpid, payload)
+      w.game_progress_value = data.progress_value
+      w.game_status = data.status
+      w.auto_completed = data.auto_completed
+    } else {
+      const payload = { progress_value: next }
+      if (dir < 0 && w.auto_completed) payload.status = ACTIVE_STATUS[cat.value]
+      const { data } = await worksApi.update(w.id, payload)
+      w.progress_value = data.progress_value
+      w.status = data.status
+      w.auto_completed = data.auto_completed
+    }
   } catch (e) {
-    console.error('progress +1 failed', e)
+    console.error('progress step failed', e)
     showToast('进度更新失败', 'error')
   } finally {
     props.work.__busy = false
@@ -109,7 +130,8 @@ const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '�
           <div class="exp-fill" :style="{ width: pct + '%', background: categoryGradient(cat, 0) }" />
         </div>
         <span class="exp-label">{{ progressLabel }}</span>
-        <button class="exp-plus" :disabled="busy" title="进度 +1" @click="increment">+1</button>
+        <button v-if="(work.progress_value ?? gpProgress ?? 0) > 0" class="exp-plus" :disabled="busy" title="进度 −1" @click="stepProgress($event, -1)">−1</button>
+        <button class="exp-plus" :disabled="busy" title="进度 +1" @click="stepProgress($event, 1)">+1</button>
       </div>
     </div>
     <div class="info">

@@ -148,6 +148,7 @@ class WorkListItem(BaseModel):
     is_free: bool = False
     game_status: str = "wish"
     game_progress_value: Optional[float] = None
+    game_profile_id: Optional[int] = None
 
     model_config = {"from_attributes": True}
 

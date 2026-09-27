@@ -66,6 +66,7 @@ def list_works(
         if w.category == "game" and w.game_profiles:
             item_data["game_status"] = w.game_profiles[0].status.value if hasattr(w.game_profiles[0].status, "value") else w.game_profiles[0].status
             item_data["game_progress_value"] = w.game_profiles[0].progress_value
+            item_data["game_profile_id"] = w.game_profiles[0].id
         items.append(WorkListItem(**item_data))
 
     return PaginatedWorks(

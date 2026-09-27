@@ -264,3 +264,19 @@
 - IAB 合成点击（locator.click/cua.click）对该按钮不触发 Vue 事件（elementFromPoint
   证明无遮挡、原生 el.click() 正常）——判定为环境合成事件怪癖，功能本身无问题；
   已补入环境怪癖记忆
+
+## 2026-09-27 自主接管第十五轮：±1 回退与游戏分流
+
+### 发现并修复 R14 遗留 bug
+游戏卡的 +1 调的是 worksApi.update（改 Work.progress_value），但游戏进度挂在
+GameProfile 上且列表响应不含 GP id——表现为"游戏卡点了没反应"。修复：列表响应
+补 game_profile_id，卡片 ±1 按品类分流（game→gameProfilesApi.update(GP id)）。
+
+### 设计决策
+- 对称 −1 按钮代替撤销 toast（无需改造 toast 组件，可发现性更好）
+- auto_completed 状态随进度回退自动恢复"进行中"（Work→watching、GP→playing），
+  避免"11/12 但状态已完成"的不协调；非自动完成的状态不由 ±1 触碰
+
+### 验证
+四条链路浏览器实测全通（动画 +1 自动完成、−1 回退、游戏 GP +1/−1 分流）；
+过程中游戏分支基数取错（GP 被写成 5）当场发现修正并恢复数据。

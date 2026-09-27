@@ -283,3 +283,15 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] stopPropagation 防止误触跳转详情页；busy 状态防连点
 - [x] 验证：build 通过；浏览器实测 10/12 → 11 → 12/12(100%) 状态戳自动变"看完"
 - **Status:** complete
+
+## 第十五轮: ±1 配套（对称回退 + 游戏分流修复）✅ (2026-09-27)
+
+- [x] 修 R14 遗留 bug：游戏卡 +1 错改 Work.progress_value（游戏进度实际在 GP 上）——
+      WorkListItem/works.py 补 game_profile_id，卡片 ±1 按品类分流到正确对象
+- [x] 对称 −1 按钮（进度 >0 时显示）：误触/回退；auto_completed 状态随进度回退
+      自动恢复"进行中"（Work→watching、GP→playing）
+- [x] 过程修正：游戏分支进度基数曾误用 Work 的空值（GP 被写成 5），当场改为
+      game_progress_value 并恢复数据
+- [x] 验证：四链路全通——动画 +1→12/12 自动"看完"、−1→回退"在看"、
+      游戏 +1→GP 95、−1→GP 90
+- **Status:** complete
