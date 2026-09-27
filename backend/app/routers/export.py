@@ -100,7 +100,7 @@ def restore_database(file: UploadFile = File(...)):
         if os.path.exists(side):
             os.remove(side)
 
-    return {"message": "还原成功，当前数据已自动备份为 " + os.path.basename(snapshot)}
+    return {"message": "还原成功，当前数据已自动备份为 " + os.path.basename(snapshot) + "；重启后端服务后完全生效"}
 
 
 @router.get("/export/json")

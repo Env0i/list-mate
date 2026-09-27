@@ -12,7 +12,12 @@
 - **自定义标签** — 创建标签并关联作品，支持颜色选择与按标签筛选
 - **评分评价** — 0–10 整数评分、文字评价、游玩笔记
 - **统计仪表盘** — 分类计数、状态分布、评分等级分布（S/A/B/C）、操作时间线
-- **数据导出** — JSON / CSV 格式导出作品数据
+- **数据导出** — JSON / CSV 格式导出作品数据（文件名自带日期）
+- **备份与还原** — 一键下载 SQLite 整库备份（含时间线/附件/封面），支持从备份文件还原（还原前自动快照兜底）
+- **主题三态** — 跟随系统 / 白天 / 黑夜（默认白天），右上角切换即时生效
+- **快捷进度** — 列表卡片 ±1 直接更新进度，到达总量自动标记完成
+- **作品历史** — 详情页按天分组展示该作品的全部操作记录
+- **本周活跃** — 统计页展示最近 7 天操作数与更新作品数
 - **卡册风 UI** — 多层边框 + 四角装饰 + 全息闪光 Hover + EXP 经验值条 + 印章式状态戳记 + 发牌入场动画
 
 ## 技术栈
@@ -54,7 +59,8 @@ zace/
 │   ├── design.md                 # 设计文档
 │   └── ui-design-spec.md         # UI 设计规范
 ├── deploy.py                     # 自动化部署脚本
-└── CLAUDE.md                     # AI 辅助开发配置
+├── AGENTS.md                     # AI 辅助开发配置（ZCode）
+└── CLAUDE.md                     # AI 辅助开发配置（Claude Code）
 ```
 
 ## 快速开始
@@ -72,12 +78,12 @@ zace/
 git clone <repo-url>
 cd zace
 
-# 2. 启动后端（端口 8000）
+# 2. 启动后端（端口 8001，run.py 实际监听）
 cd backend
 pip install -r requirements.txt
 python run.py
 
-# 3. 启动前端（端口 5173，开发模式代理 /api → 8000）
+# 3. 启动前端（端口 5173，开发模式代理 /api → 8001）
 cd ../frontend
 npm install
 npx vite
@@ -102,6 +108,16 @@ python deploy.py
 
 当前部署地址：`http://47.108.188.175:8081`
 
+## 数据管理
+
+所有入口在 **统计页右上角**：
+
+| 操作 | 说明 |
+|------|------|
+| **JSON / CSV** | 导出作品数据（不含时间线/附件/封面），文件名自带日期 |
+| **备份** | 下载 SQLite 整库快照（`.db`），是可直接还原的完整备份 |
+| **还原** | 上传 `.db` 备份覆盖当前数据；**还原前当前数据会自动快照**到服务器 `backups/` 目录，还原后需重启后端服务生效 |
+
 ## API 概览
 
 ### 作品
@@ -121,12 +137,18 @@ python deploy.py
 - `POST /api/works/{id}/attachments` — 上传附件
 - `GET/DELETE /api/attachments/{id}` — 下载 / 删除附件
 
+### 数据管理
+
+- `GET /api/export/json` / `GET /api/export/csv` — 导出作品数据
+- `GET /api/backup` — 下载 SQLite 整库备份（含时间线/附件/封面）
+- `POST /api/restore` — 从备份文件还原（覆盖式，还原前自动快照到服务器 backups/）
+
 ### 其他
 
 - `GET/POST/PUT/DELETE /api/tags` — 标签 CRUD
-- `POST /api/bangumi/search` — Bangumi 搜索
-- `GET /api/stats` — 统计数据
-- `GET /api/timeline` — 操作时间线
+- `POST /api/bangumi/search` — Bangumi 搜索（type 过滤）
+- `GET /api/stats` — 统计数据（含 week_activity 本周活跃）
+- `GET /api/timeline` — 操作时间线（支持 work_id 过滤）
 
 ## 品类色系统
 
@@ -137,7 +159,7 @@ python deploy.py
 
 ## 项目状态
 
-当前已完成全部四个迭代，部署运行中。
+当前已完成全部四个迭代并经十三轮自主打磨优化（v1.0.0）。
 
 - **Iter 1** — 作品 CRUD + Bangumi + GameProfile + 卡册 UI
 - **Iter 2** — 自定义标签 + 评分评价 + 标签筛选
