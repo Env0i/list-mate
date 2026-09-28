@@ -552,4 +552,10 @@ async function remove(id) {
   .tag-body { padding: 12px 14px; }
   .tag-actions { opacity: 1; }
 }
+
+/* 触屏：标签操作控件达到 44px 触控目标（Q3 决策；色板格保持小尺寸网格） */
+@media (pointer: coarse) {
+  .act-btn { width: 44px; height: 44px; }
+  .act-save, .act-cancel, .edit-input { min-height: 44px; }
+}
 </style>

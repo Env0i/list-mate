@@ -9,7 +9,9 @@ import { getPlatformIconUrl } from '../utils/platformIcons'
 import { showToast } from '../utils/toast'
 import { emptyToNull } from '../utils/payload'
 import { STATUS_LABELS, STATUS_COLORS } from '../constants/work'
-import { actionLabels, actionIcons, formatValue, timeAgo, dayLabel } from '../utils/timeline'
+import StatusStamp from '../components/work/StatusStamp.vue'
+import TimelineList from '../components/common/TimelineList.vue'
+import BaseModal from '../components/common/BaseModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -50,23 +52,13 @@ const infoboxMap = computed(() => {
   return m
 })
 
-const stLabel = computed(() => {
-  if (!work.value) return ''
+// 印章只认状态键：游戏作品取首个配置的状态
+const stKey = computed(() => {
+  if (!work.value) return 'wish'
   const cat = work.value.category
-  if (cat === 'game') {
-    const st = work.value.game_profiles?.[0]?.status || 'wish'
-    return statusLabels[cat]?.[st] || st
-  }
-  return statusLabels[cat]?.[work.value.status] || work.value.status || '—'
-})
-
-const stBg = computed(() => {
-  if (!work.value) return 'var(--s-wish)'
-  const cat = work.value.category
-  const key = cat === 'game'
-    ? work.value.game_profiles?.[0]?.status || 'wish'
-    : work.value.status || 'wish'
-  return statusBg[key] || 'var(--s-wish)'
+  return cat === 'game'
+    ? (work.value.game_profiles?.[0]?.status || 'wish')
+    : (work.value.status || 'wish')
 })
 
 function gpProgressLabel(gp) {
@@ -208,17 +200,7 @@ async function saveEdit() {
   }
 }
 
-// 历史按天分组（与 Stats 操作记录同一标签规则）
-const groupedHistory = computed(() => {
-  const groups = []
-  for (const e of history.value) {
-    const label = dayLabel(e.created_at)
-    const last = groups[groups.length - 1]
-    if (last && last.label === label) last.items.push(e)
-    else groups.push({ label, items: [e] })
-  }
-  return groups
-})
+// 历史按天分组逻辑已收进 TimelineList 组件（与 Stats 操作记录同一标签规则）
 
 async function loadHistory() {
   historyLoading.value = true
@@ -340,7 +322,7 @@ onMounted(() => { load(); loadHistory() })
             </div>
 
             <div class="stamp-row">
-              <span class="status-stamp" :style="{ '--st-bg': stBg }">{{ stLabel }}</span>
+              <StatusStamp :category="work.category" :status="stKey" />
             </div>
 
             <!-- Personal tags -->
@@ -507,20 +489,7 @@ onMounted(() => { load(); loadHistory() })
         </div>
         <div v-if="historyLoading" class="history-hint">加载中...</div>
         <div v-else-if="history.length" class="history-list">
-          <template v-for="g in groupedHistory" :key="g.label">
-            <div class="h-day">{{ g.label }}</div>
-            <div v-for="e in g.items" :key="e.id" class="history-item">
-              <span class="h-icon">{{ actionIcons[e.action_type] || '·' }}</span>
-              <div class="h-body">
-                <div class="h-head">
-                  <span class="h-action">{{ actionLabels[e.action_type] || e.action_type }}</span>
-                  <span v-if="e.game_profile_id" class="h-gp">配置 #{{ e.game_profile_id }}</span>
-                </div>
-                <div class="h-detail">{{ formatValue(e.action_type, e.old_value, e.new_value) }}</div>
-              </div>
-              <span class="h-time">{{ timeAgo(e.created_at) }}</span>
-            </div>
-          </template>
+          <TimelineList :entries="history" />
         </div>
         <p v-else class="history-hint">暂无记录</p>
         <button
@@ -579,17 +548,14 @@ onMounted(() => { load(); loadHistory() })
     </div>
 
     <!-- Edit Modal — collector's spec sheet -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div v-if="showEditModal" class="modal-overlay" @click.self="closeEdit">
-          <div
-            class="modal-card"
-            :style="{ '--modal-accent': `var(--c-${work?.category || 'anime'})` }"
-            @click.stop
-          >
-            <!-- Header with cover thumb -->
-            <div class="modal-hd">
-              <div class="modal-hd-left">
+    <BaseModal
+      :open="showEditModal"
+      size="lg"
+      :accent="`var(--c-${work?.category || 'anime'})`"
+      @close="closeEdit"
+    >
+      <template #head>
+        <div class="modal-hd-left" :style="{ '--modal-accent': `var(--c-${work?.category || 'anime'})` }">
                 <div
                   class="modal-thumb"
                   :style="{
@@ -609,15 +575,14 @@ onMounted(() => { load(); loadHistory() })
                   <h2>编辑作品</h2>
                   <span class="modal-hd-cat">{{ work?.title || '' }}</span>
                 </div>
-              </div>
-              <button class="modal-close" @click="closeEdit">
+        </div>
+        <button class="modal-close" aria-label="关闭" @click="closeEdit">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
                   <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
                 </svg>
-              </button>
-            </div>
+        </button>
+      </template>
 
-            <div class="modal-body">
               <div class="modal-grid">
                 <!-- Left column -->
                 <div class="modal-col">
@@ -769,18 +734,14 @@ onMounted(() => { load(); loadHistory() })
                   </div>
                 </div>
               </div>
-            </div>
 
-            <div class="modal-ft">
-              <button class="modal-cancel" @click="closeEdit">取消</button>
-              <button class="modal-save" @click="saveEdit" :disabled="saving">
-                {{ saving ? '保存中...' : '保存修改' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+      <template #foot>
+        <button class="modal-cancel" @click="closeEdit">取消</button>
+        <button class="modal-save" @click="saveEdit" :disabled="saving">
+          {{ saving ? '保存中...' : '保存修改' }}
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -969,23 +930,8 @@ onMounted(() => { load(); loadHistory() })
 }
 .sep { opacity: 0.3; }
 
-/* Status stamp */
+/* Status stamp 已收进 StatusStamp 组件 */
 .stamp-row { margin-bottom: 18px; }
-.status-stamp {
-  display: inline-flex;
-  align-items: center;
-  height: 26px;
-  padding: 0 12px;
-  border-radius: 2px;
-  font-size: 11px;
-  font-weight: 800;
-  color: white;
-  letter-spacing: 0.8px;
-  background: var(--st-bg);
-  transform: rotate(2deg);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  animation: stamp-in 0.4s cubic-bezier(.34,1.56,.64,1) both;
-}
 /* Bangumi info inside card */
 .section-label {
   font-size: var(--fs-xs);
@@ -1228,47 +1174,7 @@ onMounted(() => { load(); loadHistory() })
 }
 
 /* ===== Edit Modal — collector's spec sheet ===== */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  background: rgba(26, 24, 22, 0.35);
-  backdrop-filter: blur(6px);
-  padding: 40px 16px;
-  overflow-y: auto;
-}
-.modal-card {
-  background: var(--bg-surface);
-  border-radius: var(--radius-lg);
-  width: 100%;
-  max-width: 780px;
-  margin-top: 20px;
-  box-shadow:
-    0 0 0 1px var(--frame-outer-line),
-    0 0 0 2px rgba(255,255,255,0.5),
-    0 20px 60px rgba(0,0,0,0.12);
-  position: relative;
-  overflow: hidden;
-}
-/* Category accent top bar */
-.modal-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--modal-accent);
-}
-
-/* Header */
-.modal-hd {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 24px 0;
-}
+/* Edit modal 的外壳（遮罩/卡片/头部布局/底部栏/过渡）已收进 BaseModal 组件 */
 .modal-hd-left {
   display: flex;
   align-items: center;
@@ -1312,8 +1218,7 @@ onMounted(() => { load(); loadHistory() })
 }
 .modal-close:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
 
-/* Body — 2-column grid */
-.modal-body { padding: 20px 24px 8px; }
+/* Body — 2-column grid（外壳与内边距由 BaseModal 提供） */
 .modal-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1468,15 +1373,7 @@ onMounted(() => { load(); loadHistory() })
   outline: none;
 }
 
-/* Footer */
-.modal-ft {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 16px 24px 24px;
-  border-top: 1px solid var(--color-border);
-  margin-top: 4px;
-}
+/* Footer：布局与分隔线由 BaseModal 的 foot 槽提供，这里只保留按钮样式 */
 .modal-cancel {
   height: 36px;
   padding: 0 20px;
@@ -1517,17 +1414,6 @@ onMounted(() => { load(); loadHistory() })
   transform: translateY(-1px);
 }
 .modal-save:disabled { opacity: 0.5; box-shadow: none; transform: none; }
-
-/* Modal transitions */
-.modal-enter-active, .modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-.modal-enter-active .modal-card, .modal-leave-active .modal-card {
-  transition: transform 0.25s cubic-bezier(.2,0,0,1);
-}
-.modal-enter-from, .modal-leave-to { opacity: 0; }
-.modal-enter-from .modal-card { transform: scale(0.96) translateY(12px); }
-.modal-leave-to .modal-card { transform: scale(0.96) translateY(12px); }
 
 /* Personal tags in info card */
 .ptags-row {
@@ -1638,4 +1524,10 @@ onMounted(() => { load(); loadHistory() })
 }
 .h-time { font-size: 10px; color: var(--text-tertiary); flex-shrink: 0; margin-top: 3px; }
 
+
+/* 触屏：操作控件达到 44px 触控目标（Q3 决策） */
+@media (pointer: coarse) {
+  .add-gp-btn, .free-toggle, .modal-close, .modal-cancel, .modal-save, .history-top, .history-more { min-height: 44px; }
+  .modal-close { min-width: 44px; }
+}
 </style>

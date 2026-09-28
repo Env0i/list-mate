@@ -496,4 +496,10 @@ function itemId(item) {
 .modal-enter-from, .modal-leave-to { opacity: 0; }
 .modal-enter-from .modal-card { transform: scale(0.95) translateY(10px); }
 .modal-leave-to .modal-card { transform: scale(0.95) translateY(10px); }
+
+/* 触屏：操作控件达到 44px 触控目标（Q3 决策） */
+@media (pointer: coarse) {
+  .type-opt, .modal-cancel, .modal-save { min-height: 44px; }
+  .modal-close { width: 44px; height: 44px; }
+}
 </style>

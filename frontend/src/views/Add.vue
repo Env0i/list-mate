@@ -383,4 +383,12 @@ async function submit() {
 }
 .save-btn:hover { background: var(--primary-hover); }
 .save-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* 触屏：状态选项与开关达到 44px 触控目标（Q3 决策） */
+@media (pointer: coarse) {
+  .st-opt, .save-btn { min-height: 44px; }
+  .toggle { width: 52px; height: 30px; border-radius: 15px; }
+  .toggle::after { width: 26px; height: 26px; top: 2px; left: 2px; }
+  .toggle:checked::after { transform: translateX(22px); }
+}
 </style>

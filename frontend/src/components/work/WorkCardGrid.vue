@@ -1,8 +1,9 @@
 <script setup>
 import { computed } from 'vue'
 import { worksApi, gameProfilesApi } from '../../api/client'
-import { STATUS_LABELS, STATUS_COLORS, categoryGradient } from '../../constants/work'
+import { STATUS_LABELS, categoryGradient } from '../../constants/work'
 import { showToast } from '../../utils/toast'
+import StatusStamp from './StatusStamp.vue'
 
 const props = defineProps({ work: Object })
 
@@ -27,10 +28,9 @@ const gameStatus = computed(() => {
   return props.work.game_status
 })
 
-const st = computed(() => {
+const stKey = computed(() => {
   const cat = props.work.category
-  const key = cat === 'game' ? (gameStatus.value || 'wish') : (props.work.status || 'wish')
-  return { label: STATUS_LABELS[cat]?.[key] || key, bg: STATUS_COLORS[key] || 'var(--s-wish)' }
+  return cat === 'game' ? (gameStatus.value || 'wish') : (props.work.status || 'wish')
 })
 
 // 游戏 GP 的 percent 型进度自带分母 100；其余品类按 total 折算
@@ -127,7 +127,7 @@ const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '�
         </template>
       </div>
       <!-- Status stamp -->
-      <div class="status-stamp" :style="{ background: st.bg }">{{ st.label }}</div>
+      <StatusStamp class="card-stamp" :category="cat" :status="stKey" />
       <!-- EXP bar overlay -->
       <div v-if="cat === 'game' || work.progress_value != null" class="exp-wrap">
         <div class="exp-rail">
@@ -212,21 +212,13 @@ const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '�
 .cover-icon { width: 36px; height: 36px; position: relative; z-index: 1; }
 .cover-dots { position: absolute; inset: 0; }
 
-/* Status stamp — bigger, more prominent */
-.status-stamp {
+/* Status stamp — 定位保留原位（S2 卡牌重做时按原型移到左下）；
+   外投影用 filter 以免与组件自身的 inset 描边（box-shadow）打架 */
+.card-stamp {
   position: absolute;
   top: 8px;
   right: 8px;
-  padding: 4px 10px;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  border-radius: 3px;
-  transform: rotate(3deg);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
-  backdrop-filter: blur(4px);
-  animation: stamp-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.25));
 }
 
 /* EXP bar — thicker, bolder */
@@ -317,6 +309,11 @@ const catNameMap = { anime: '番剧', novel: '小说', comic: '漫画', game: '�
 .total-tag {
   font-size: 10px;
   font-weight: 500;
-  color: var(--text-tertiary);
+  color: var(--text-secondary);
+}
+
+/* 触屏下快捷进度按钮放大到 44px 触控目标 */
+@media (pointer: coarse) {
+  .exp-plus { width: 44px; height: 44px; }
 }
 </style>

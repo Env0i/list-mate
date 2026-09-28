@@ -1,3 +1,11 @@
+/* ======== 自托管字体（SIL OFL 1.1，许可证见 public/fonts/OFL-*.txt）========
+   拉丁子集，中文继续走系统字体（Noto Sans SC / 苹方 / 雅黑）；font-display: swap 防阻塞 */
+@font-face { font-family: 'DM Sans'; src: url('/fonts/dm-sans-latin-400-normal.woff2') format('woff2'); font-weight: 400; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215; }
+@font-face { font-family: 'DM Sans'; src: url('/fonts/dm-sans-latin-500-normal.woff2') format('woff2'); font-weight: 500 600; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215; }
+@font-face { font-family: 'DM Sans'; src: url('/fonts/dm-sans-latin-700-normal.woff2') format('woff2'); font-weight: 700 800; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2'); font-weight: 400 500; font-display: swap; unicode-range: U+0000-00FF, U+2000-206F, U+2212; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/jetbrains-mono-latin-700-normal.woff2') format('woff2'); font-weight: 600 800; font-display: swap; unicode-range: U+0000-00FF, U+2000-206F, U+2212; }
+
 :root {
   /* Backgrounds — warm album paper */
   --bg-primary: #F7F5F0;
@@ -81,6 +89,7 @@
   --fs-lg: 1.0625rem;
   --fs-xl: 1.25rem;
   --fs-2xl: 1.5rem;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Noto Sans SC', monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -115,6 +124,12 @@ html, body { height: 100%; }
   --nav-border: rgba(255,255,255,0.06);
 }
 
+/* 品类底上的文字色 --cc-on：品类色双主题固定不变，搭配也必须固定——
+   深墨 #1A1816（即亮色 --text-primary 的值）与白 #FFFFFF，均为既有色值；
+   若跟随主题翻转，暗色下的浅字压品类色会跌破 4.5:1 */
+[data-cat='anime'], [data-cat='comic'], [data-cat='game'] { --cc-on: #1A1816; }
+[data-cat='novel'] { --cc-on: #FFFFFF; }
+
 body {
   font-family: var(--font-sans);
   background: var(--bg-primary);
@@ -131,6 +146,23 @@ button {
   user-select: none;
 }
 button:active { transform: scale(0.96); }
+
+/* 键盘可达性兜底：未自带焦点样式的可聚焦元素统一显示 2px 外圈 */
+:focus-visible {
+  outline: 2px solid var(--s-watching);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 读屏专用（视觉隐藏） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
 
 input, textarea, select {
   font: inherit; color: var(--text-primary); background: var(--bg-input);

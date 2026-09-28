@@ -379,3 +379,24 @@ Add/WorkDetail 的 background: white 是 toggle 开关圆点；详情页封面�
 
 - 加载更多把用户带到列表深处，回顶是自然配套；按钮放历史卡头部（比浮动按钮克制）
 - 显示阈值 = 已加载数 ≥ 一页（20 条），单页用户看不到多余按钮
+## 2026-09-28 UI 进化 S1：令牌补充 / 字体 / 印章对比度 / 触控目标 / 五个共享组件
+
+按 zace-implementation-handoff.md §6 落地第一阶段（S1），四项前置决策已拍板：
+Q1 +1集带5秒撤销、Q2 加入想看直接调 worksApi.create、Q3 触控目标 44px、Q4 统计口径后端加 monthly_added（均在后续阶段落地）。
+
+- 令牌：style.css 新增 --cc-on（anime/comic/game 深墨、novel 白，双主题固定以过 4.5:1）、
+  --font-mono、全局 :focus-visible 兜底、.sr-only；CategoryBadge 改品类实底+--cc-on 文字
+- 字体：DM Sans 400/500/700 + JetBrains Mono 400/700 拉丁子集自托管至 public/fonts/（含 OFL 许可证），
+  @font-face 挂入 style.css（unicode-range 限定拉丁，中文走系统字体）
+- 印章：新建 StatusStamp.vue（纸底+状态色描边+圆点+正文色文字，替换暂停黄白字 1.8:1 的旧样式），
+  WorkCardGrid 与 WorkDetail 接入；卡面数字 total-tag 提级 --text-secondary（2.6→7.1:1）
+- 五个共享组件：StatusStamp / StateBlock / SkeletonBlock / BaseModal / TimelineList（components/common/）
+  TimelineList 统一 Stats 与 WorkDetail 两套时间线皮肤；BaseModal 换 WorkDetail 编辑模态壳
+  （Esc/焦点圈定/焦点还原/移动端抽屉）；StateBlock+SkeletonBlock 接入 WorkList loading/empty
+- 触控目标：TopBar/ThemeToggle/WorkCardGrid 及全部视图交互控件补 @media (pointer: coarse) ≥44px
+- 其他：暗色 logo 补 hue-rotate(180deg)（四角品类色还原）
+- 验证：npm run build 通过；浏览器实测亮/暗 × 1440/375（收藏/详情/统计/底栏/主题菜单）；
+  四态：空（StateBlock）/加载（30 骨架块+aria-busy+读屏文案）/满载逐个打开，错误态 UI 留 S2；
+  编辑模态焦点进出与 Esc 闭环实测通过；对比度实测徽章 4.68:1、印章正文色文字；
+  字体确认加载（document.fonts）。环境怪癖：IAB 渲染器路由过渡不触发 transitionend，
+  SPA 换页视图冻结（真实浏览器不受影响）——验收改用整页加载

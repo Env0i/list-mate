@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import { worksApi, tagsApi } from '../api/client'
 import WorkCardGrid from '../components/work/WorkCardGrid.vue'
 import ThemeToggle from '../components/layout/ThemeToggle.vue'
+import StateBlock from '../components/common/StateBlock.vue'
+import SkeletonBlock from '../components/common/SkeletonBlock.vue'
 
 const router = useRouter()
 
@@ -192,7 +194,14 @@ function catStyle(c) {
       </div>
 
       <!-- Grid -->
-      <div v-if="loading" class="loading">加载中...</div>
+      <div v-if="loading" class="grid" aria-busy="true">
+        <span class="sr-only">正在读取卡册</span>
+        <div v-for="i in 10" :key="i" class="skel-card" aria-hidden="true">
+          <div class="skel-cover"><SkeletonBlock h="100%" w="100%" radius="6px" /></div>
+          <SkeletonBlock h="14px" w="86%" radius="6px" class="skel-t" />
+          <SkeletonBlock h="11px" w="50%" radius="6px" />
+        </div>
+      </div>
       <div v-else-if="filtered.length" class="grid">
         <div v-for="(w, i) in filtered" :key="w.id" :style="{ animationDelay: (i % 12) * 0.04 + 's' }" @click="router.push(`/works/${w.id}`)" @keydown.enter="router.push(`/works/${w.id}`)" @keydown.space.prevent="router.push(`/works/${w.id}`)" role="button" tabindex="0">
           <WorkCardGrid :work="w" />
@@ -200,20 +209,14 @@ function catStyle(c) {
       </div>
 
       <!-- Empty -->
-      <div v-else class="empty">
-        <div class="empty-box">
-          <svg viewBox="0 0 40 40" fill="none" width="30" height="30">
-            <rect x="8" y="10" width="24" height="22" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.15"/>
-            <path d="M16 18l4-3v12l-4-3v-6z" fill="currentColor" opacity="0.08"/>
-          </svg>
-        </div>
-        <p class="empty-t">还没有作品</p>
-        <p class="empty-d">搜索或手动添加第一部作品</p>
-        <div class="empty-actions">
-          <button class="empty-btn primary" @click="router.push('/search')">去搜索添加</button>
-          <button class="empty-btn" @click="router.push('/add')">手动添加</button>
-        </div>
-      </div>
+      <StateBlock
+        v-else
+        title="还没有作品"
+        message="搜索或手动添加第一部作品"
+      >
+        <button class="empty-btn primary" @click="router.push('/search')">去搜索添加</button>
+        <button class="empty-btn" @click="router.push('/add')">手动添加</button>
+      </StateBlock>
     </div>
   </div>
 </template>
@@ -405,7 +408,20 @@ function catStyle(c) {
 }
 
 /* ======== Loading ======== */
-.loading { text-align: center; padding: 80px 20px; color: var(--text-tertiary); }
+/* 加载骨架卡（SkeletonBlock 组合；空/错误态用 StateBlock 组件） */
+.skel-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  padding: 5px 5px 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+}
+.skel-cover {
+  aspect-ratio: 3 / 4;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.skel-t { margin-bottom: 6px; }
 
 /* ======== Grid ======== */
 .grid {
@@ -418,10 +434,6 @@ function catStyle(c) {
 @media (min-width: 1200px) { .grid { grid-template-columns: repeat(5, 1fr); } }
 
 /* ======== Empty ======== */
-.empty { text-align: center; padding: 80px 20px; }
-.empty-box { width: 56px; height: 56px; margin: 0 auto 10px; background: var(--bg-surface); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
-.empty-t { font-size: var(--fs-lg); color: var(--text-secondary); margin-bottom: 4px; }
-.empty-actions { display: flex; justify-content: center; gap: 10px; margin-top: 16px; }
 .empty-btn {
   height: 36px;
   padding: 0 18px;
@@ -435,5 +447,9 @@ function catStyle(c) {
 .empty-btn:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
 .empty-btn.primary { background: var(--primary); color: #fff; border-color: transparent; }
 .empty-btn.primary:hover { background: var(--primary-hover); }
-.empty-d { font-size: var(--fs-sm); color: var(--text-tertiary); }
+
+/* 触屏：筛选与操作控件达到 44px 触控目标（Q3 决策） */
+@media (pointer: coarse) {
+  .sort-sel, .s-inp, .cat-tab, .st-filter, .tag-filter, .empty-btn { min-height: 44px; }
+}
 </style>

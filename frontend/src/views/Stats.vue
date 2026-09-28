@@ -4,7 +4,7 @@ import { statsApi, timelineApi } from '../api/client'
 import { exportApi } from '../api/client'
 import { showToast } from '../utils/toast'
 import { STATUS_LABELS_FLAT, STATUS_COLORS } from '../constants/work'
-import { actionLabels, actionIcons, formatValue, timeAgo, dayLabel } from '../utils/timeline'
+import TimelineList from '../components/common/TimelineList.vue'
 
 const stats = ref(null)
 const timeline = ref([])
@@ -71,17 +71,7 @@ const catIcons = {
 const statusLabels = STATUS_LABELS_FLAT
 const statusColors = STATUS_COLORS
 
-// 操作记录按天分组（倒序数据顺序扫描，同天归入同组）
-const groupedTimeline = computed(() => {
-  const groups = []
-  for (const e of timeline.value) {
-    const label = dayLabel(e.created_at)
-    const last = groups[groups.length - 1]
-    if (last && last.label === label) last.items.push(e)
-    else groups.push({ label, items: [e] })
-  }
-  return groups
-})
+// 操作记录的按天分组逻辑已收进 TimelineList 组件
 
 const maxCatCount = computed(() => stats.value ? Math.max(...stats.value.category_counts.map(c => c.count), 1) : 1)
 const maxStatusCount = computed(() => stats.value ? Math.max(...stats.value.status_counts.map(s => s.count), 1) : 1)
@@ -354,29 +344,7 @@ function ratingRank(rating) {
         <!-- ===== TIMELINE TAB ===== -->
         <template v-if="activeTab === 'timeline'">
           <div class="tl-section" v-if="timeline.length">
-            <div class="tl-scroll">
-              <div class="tl-list">
-                <template v-for="g in groupedTimeline" :key="g.label">
-                  <div class="tl-day">{{ g.label }}</div>
-                  <div v-for="entry in g.items" :key="entry.id" class="tl-item" :class="'tl-' + entry.action_type">
-                  <div class="tl-marker">
-                    <div class="tl-dot" :class="'dot-' + entry.action_type" />
-                    <div class="tl-line" />
-                  </div>
-                  <div class="tl-content">
-                    <div class="tl-head">
-                      <span class="tl-icon">{{ actionIcons[entry.action_type] || '·' }}</span>
-                      <span class="tl-action">{{ actionLabels[entry.action_type] || entry.action_type }}</span>
-                      <span class="tl-work">作品 #{{ entry.work_id }}</span>
-                      <span v-if="entry.game_profile_id" class="tl-gp">配置 #{{ entry.game_profile_id }}</span>
-                    </div>
-                    <div class="tl-detail">{{ formatValue(entry.action_type, entry.old_value, entry.new_value) }}</div>
-                    <div class="tl-time">{{ timeAgo(entry.created_at) }}</div>
-                  </div>
-                </div>
-                </template>
-              </div>
-            </div>
+            <TimelineList :entries="timeline" show-work />
           </div>
           <div v-else-if="!timelineLoading" class="empty-tl">
             <p>暂无操作记录</p>
@@ -719,6 +687,7 @@ function ratingRank(rating) {
 
 /* Timeline */
 .tl-section { position: relative; }
+/* 时间线皮肤已收进 TimelineList 组件（详情页历史共用同一套） */
 .tl-scroll {
   max-height: 600px;
   overflow-y: auto;
@@ -727,98 +696,15 @@ function ratingRank(rating) {
 .tl-scroll::-webkit-scrollbar { width: 4px; }
 .tl-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.06); border-radius: 2px; }
 
-.tl-list { position: relative; }
-.tl-day {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--text-tertiary);
-  padding: 14px 0 6px;
-}
-.tl-item {
-  display: flex;
-  gap: 14px;
-  padding: 0 0 6px 0;
-  position: relative;
-}
-.tl-marker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 20px;
-  flex-shrink: 0;
-}
-.tl-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  margin-top: 5px;
-  background: var(--text-tertiary);
-  border: 2px solid var(--bg-primary);
-  z-index: 1;
-  transition: transform 0.15s;
-}
-.tl-item:hover .tl-dot { transform: scale(1.3); }
-.dot-created { background: #00B85A; }
-.dot-status_change { background: #3366FF; }
-.dot-rating_change { background: #FFB800; }
-.dot-review_change { background: #8b5cf6; }
-.dot-progress_update { background: var(--primary); }
-.tl-line {
-  width: 1.5px;
-  flex: 1;
-  background: var(--color-border);
-  min-height: 30px;
-}
-.tl-item:last-child .tl-line { display: none; }
-.tl-item:last-child { padding-bottom: 0; }
-
-.tl-content {
-  flex: 1;
-  min-width: 0;
-  padding-bottom: 16px;
-}
-.tl-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 3px;
-}
-.tl-icon {
-  font-size: 12px;
-  width: 16px;
-  text-align: center;
-  color: var(--text-tertiary);
-}
-.tl-action {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-}
-.tl-work, .tl-gp {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--bg-primary);
-}
-.tl-detail {
-  font-size: var(--fs-sm);
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-left: 22px;
-}
-.tl-time {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-  padding-left: 22px;
-}
 .empty-tl {
   text-align: center;
   padding: 60px 20px;
   color: var(--text-tertiary);
   font-size: var(--fs-sm);
+}
+
+/* 触屏：页签与导出按钮达到 44px 触控目标（Q3 决策） */
+@media (pointer: coarse) {
+  .tab, .export-btn { min-height: 44px; }
 }
 </style>

@@ -785,4 +785,10 @@ onMounted(load)
 }
 .save-btn:hover { background: var(--primary-hover); }
 .save-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* 触屏：操作控件达到 44px 触控目标（Q3 决策） */
+@media (pointer: coarse) {
+  .st-opt, .pt-opt, .add-mod-btn, .mod-cancel, .mod-confirm, .upload-btn, .save-btn { min-height: 44px; }
+  .step-btn { width: 44px; height: 44px; }
+}
 </style>

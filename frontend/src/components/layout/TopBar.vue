@@ -88,8 +88,8 @@ const items = [
   height: 30px;
   width: auto;
 }
-/* 暗色下 logo 是深色 SVG，反白保证可读 */
-:root[data-theme='dark'] .brand-logo { filter: invert(0.92); }
+/* 暗色下 logo 是深色 SVG：反白保证可读，hue-rotate 把四角品类色转回原色相 */
+:root[data-theme='dark'] .brand-logo { filter: invert(0.92) hue-rotate(180deg); }
 
 .nav {
   display: flex;
@@ -112,4 +112,9 @@ const items = [
 .ni:active { transform: none; }
 .ni.on { color: var(--primary); background: var(--primary-light); font-weight: 600; }
 .ni-i { width: 17px; height: 17px; }
+
+/* 触屏下导航项与图标按钮达到 44px 触控目标 */
+@media (pointer: coarse) {
+  .ni { min-height: 44px; }
+}
 </style>

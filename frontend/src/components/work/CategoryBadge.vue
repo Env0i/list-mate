@@ -1,12 +1,15 @@
 <script setup>
+import { computed } from 'vue'
+
+// 品类徽章：品类实底 + --cc-on 文字（style.css 按 data-cat 定义，唯一能全品类过 4.5:1 的搭配）
 const props = defineProps({ category: String })
 const map = { anime: '番剧', novel: '小说', comic: '漫画', game: '游戏' }
+const known = computed(() => !!map[props.category])
 </script>
 
 <template>
-  <span class="badge" :class="'b-' + category">
-    {{ map[category] || category }}
-  </span>
+  <span v-if="known" class="badge" :data-cat="category">{{ map[category] }}</span>
+  <span v-else class="badge badge-unknown">{{ category }}</span>
 </template>
 
 <style scoped>
@@ -20,9 +23,12 @@ const map = { anime: '番剧', novel: '小说', comic: '漫画', game: '游戏' 
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.3px;
+  color: var(--cc-on, var(--text-primary));
+  background: var(--cc, var(--text-tertiary));
 }
-.b-anime { background: var(--c-anime-bg); color: var(--c-anime); }
-.b-novel { background: var(--c-novel-bg); color: var(--c-novel); }
-.b-comic { background: var(--c-comic-bg); color: var(--c-comic); }
-.b-game { background: var(--c-game-bg); color: var(--c-game); }
+.badge[data-cat='anime'] { background: var(--c-anime); }
+.badge[data-cat='novel'] { background: var(--c-novel); }
+.badge[data-cat='comic'] { background: var(--c-comic); }
+.badge[data-cat='game'] { background: var(--c-game); }
+.badge-unknown { color: var(--text-primary); }
 </style>

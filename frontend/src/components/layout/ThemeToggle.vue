@@ -124,4 +124,10 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 }
 .tt-wrap.floating .tt-btn:hover { background: var(--bg-surface-hover); }
 @media (min-width: 768px) { .tt-wrap.floating { display: none; } }
+
+/* 触屏：按钮与选项达到 44px 触控目标 */
+@media (pointer: coarse) {
+  .tt-btn { width: 44px; height: 44px; }
+  .tt-opt { min-height: 44px; }
+}
 </style>
