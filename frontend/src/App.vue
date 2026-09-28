@@ -1,7 +1,7 @@
 <script setup>
 import TopBar from './components/layout/TopBar.vue'
 import MobileNav from './components/layout/MobileNav.vue'
-import { useToast } from './utils/toast'
+import { useToast, dismissToast } from './utils/toast'
 const { toasts } = useToast()
 </script>
 
@@ -24,7 +24,12 @@ const { toasts } = useToast()
         :key="t.id"
         class="toast"
         :class="t.type"
-      >{{ t.message }}</div>
+      >
+        <span>{{ t.message }}</span>
+        <button v-if="t.action" class="toast-action" @click="t.action.handler(); dismissToast(t.id)">
+          {{ t.action.label }}
+        </button>
+      </div>
     </transition-group>
   </div>
 </template>
@@ -70,6 +75,22 @@ const { toasts } = useToast()
   backdrop-filter: blur(8px);
   box-shadow: 0 4px 20px rgba(0,0,0,0.12);
   pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 90vw;
+}
+.toast > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.toast-action {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 28px;
+  flex: none;
 }
 .toast.success {
   background: rgba(0, 184, 90, 0.92);

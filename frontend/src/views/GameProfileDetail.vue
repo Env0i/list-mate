@@ -1,66 +1,73 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { worksApi, gameProfilesApi, attachmentsApi } from '../api/client'
-import { showToast } from '../utils/toast'
+import { STATUS_COLORS } from '../constants/work'
 import { emptyToNull } from '../utils/payload'
-import { STATUS_LABELS, STATUS_COLORS } from '../constants/work'
+import { showToast } from '../utils/toast'
+import GameProfileForm from '../components/work/GameProfileForm.vue'
+import StatusStamp from '../components/work/StatusStamp.vue'
+import StateBlock from '../components/common/StateBlock.vue'
+import SkeletonBlock from '../components/common/SkeletonBlock.vue'
+import BaseModal from '../components/common/BaseModal.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const gp = ref(null)
-const workTitle = ref('')
-const originalStatus = ref(null)
+const work = ref(null)
+const error = ref(false)
 const loading = ref(true)
 const saving = ref(false)
-const deleting = ref(false)
-const showModInput = ref(false)
-const modInputText = ref('')
+const dirty = ref(false)
+
 const attachments = ref([])
 const uploading = ref(false)
+const dragOver = ref(false)
 
-const statusOptions = Object.entries(STATUS_LABELS.game).map(([key, label]) => ({ key, label }))
+// 删除配置确认
+const showDel = ref(false)
+const deleting = ref(false)
 
-const progressTypes = [
-  { key: 'none', label: '纯状态', desc: '不追踪数字进度' },
-  { key: 'count', label: '次数', desc: '记录通关次数' },
-  { key: 'percent', label: '百分比', desc: '记录完成百分比' },
-]
+const isGame = computed(() => (work.value?.category || 'game') === 'game')
+const gpStatusSt = computed(() => gp.value?.status || 'wish')
+const gpStatusColor = computed(() => STATUS_COLORS[gpStatusSt.value] || 'var(--s-wish)')
+const siblings = computed(() => (work.value?.game_profiles || []).filter(x => x.id !== gp.value?.id))
 
-const statusBgMap = STATUS_COLORS
-
-const progressLabel = computed(() => {
-  if (!gp.value) return ''
-  const pt = gp.value.progress_type || 'none'
-  if (pt === 'count') return `${gp.value.progress_value || 0} 次`
-  if (pt === 'percent') return `${gp.value.progress_value || 0}%`
-  return ''
-})
-
-const modsList = computed(() => {
-  if (!gp.value?.mods_list) return []
-  return gp.value.mods_list.split('\n').filter(m => m.trim())
-})
-
-const activeStatusBg = computed(() => statusBgMap[gp.value?.status] || '#A39F98')
+// 脏状态：深度侦听表单对象；初始 load 的赋值不算修改
+let suppressDirty = false
+watch(gp, () => { if (!suppressDirty) dirty.value = true }, { deep: true })
 
 async function load() {
   loading.value = true
+  error.value = false
+  suppressDirty = true
   try {
     const { data } = await gameProfilesApi.get(route.params.gpid)
     gp.value = data
-    originalStatus.value = data.status
     const workRes = await worksApi.get(data.work_id)
-    workTitle.value = workRes.data.title
+    work.value = workRes.data
     await loadAttachments()
   } catch (e) {
     console.error('Failed to load game profile', e)
+    error.value = true
   } finally {
     loading.value = false
+    // 深度 watcher 在下一次 flush 才触发，冲刷完再恢复脏标记
+    nextTick(() => { suppressDirty = false })
   }
 }
+onMounted(load)
+function beforeunload(e) {
+  if (dirty.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+onMounted(() => window.addEventListener('beforeunload', beforeunload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeunload))
 
+// —— 附件 ——
 async function loadAttachments() {
   try {
     const { data } = await attachmentsApi.list(route.params.gpid)
@@ -69,13 +76,18 @@ async function loadAttachments() {
     console.error('Failed to load attachments', e)
   }
 }
-
-async function uploadAttachment(e) {
-  const file = e.target.files?.[0]
-  if (!file) return
+async function uploadFiles(fileList) {
+  const files = Array.from(fileList || [])
+  if (!files.length) return
   uploading.value = true
   try {
-    await attachmentsApi.upload(route.params.gpid, file)
+    for (const f of files) {
+      if (f.size > 20 * 1024 * 1024) {
+        showToast(`${f.name} 超过 20 MB，未添加`, 'error')
+        continue
+      }
+      await attachmentsApi.upload(route.params.gpid, f)
+    }
     await loadAttachments()
     showToast('附件上传成功')
   } catch (e) {
@@ -83,16 +95,20 @@ async function uploadAttachment(e) {
     showToast('上传失败', 'error')
   } finally {
     uploading.value = false
-    e.target.value = ''
   }
 }
-
+function onPick(e) {
+  uploadFiles(e.target.files)
+  e.target.value = ''
+}
+function onDrop(e) {
+  dragOver.value = false
+  uploadFiles(e.dataTransfer?.files)
+}
 function downloadAttachment(id) {
   window.open(attachmentsApi.downloadUrl(id), '_blank')
 }
-
 async function deleteAttachment(id) {
-  if (!confirm('确定删除这个附件？')) return
   try {
     await attachmentsApi.delete(id)
     attachments.value = attachments.value.filter(a => a.id !== id)
@@ -103,54 +119,7 @@ async function deleteAttachment(id) {
   }
 }
 
-function setProgressType(pt) {
-  gp.value.progress_type = pt
-  if (pt === 'none') gp.value.progress_value = null
-  else if (gp.value.progress_value == null) gp.value.progress_value = 0
-}
-
-// 快捷进度即时提交（与列表卡 ±1 对齐）：percent +5 / count +1，
-// 到 100% 触发后端自动完成；自动完成后的 −1 随回退恢复"进行中"
-const stepping = ref(false)
-
-async function stepProgress(dir) {
-  if (!gp.value || stepping.value) return
-  const pt = gp.value.progress_type || 'none'
-  if (pt === 'none') return
-  const step = pt === 'percent' ? 5 : 1
-  const cur = gp.value.progress_value ?? 0
-  let next = Math.max(0, cur + dir * step)
-  if (pt === 'percent') next = Math.min(100, next)
-  if (next === cur) return
-  stepping.value = true
-  try {
-    const payload = { progress_value: next }
-    if (dir < 0 && gp.value.auto_completed) payload.status = 'playing'
-    const { data } = await gameProfilesApi.update(route.params.gpid, payload)
-    gp.value = data
-    originalStatus.value = data.status
-  } catch (e) {
-    console.error('GP step failed', e)
-    showToast('进度更新失败', 'error')
-  } finally {
-    stepping.value = false
-  }
-}
-
-function addMods() {
-  if (!modInputText.value.trim()) { showModInput.value = false; return }
-  const newMods = modInputText.value.split('\n').map(m => m.trim()).filter(m => m)
-  const current = modsList.value
-  const combined = [...new Set([...current, ...newMods])]
-  gp.value.mods_list = combined.join('\n')
-  modInputText.value = ''
-  showModInput.value = false
-}
-
-function removeMod(mod) {
-  gp.value.mods_list = modsList.value.filter(m => m !== mod).join('\n')
-}
-
+// —— 保存 / 删除 ——
 async function save() {
   saving.value = true
   try {
@@ -158,7 +127,6 @@ async function save() {
       name: gp.value.name,
       progress_value: gp.value.progress_value,
       progress_type: gp.value.progress_type,
-      // 仅在状态被用户改动时提交，否则后端视为"用户显式设状态"而跳过自动完成规则
       status: gp.value.status,
       rating: gp.value.rating,
       review: gp.value.review,
@@ -169,12 +137,9 @@ async function save() {
       mods_list: gp.value.mods_list,
       notes: gp.value.notes,
     }, ['progress_value', 'rating', 'playtime_hours'])
-    if (gp.value.status === originalStatus.value) {
-      delete body.status
-    }
-    const { data } = await gameProfilesApi.update(route.params.gpid, body)
-    gp.value = data
-    showToast('保存成功')
+    await gameProfilesApi.update(route.params.gpid, body)
+    dirty.value = false
+    showToast('配置已保存')
   } catch (e) {
     console.error('Failed to save', e)
     showToast('保存失败', 'error')
@@ -184,7 +149,6 @@ async function save() {
 }
 
 async function del() {
-  if (!confirm('确定删除这个游戏配置？')) return
   deleting.value = true
   try {
     await gameProfilesApi.delete(route.params.gpid)
@@ -196,599 +160,350 @@ async function del() {
     deleting.value = false
   }
 }
-
-onMounted(load)
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-inner" v-if="loading">
-      <div class="loading">加载中...</div>
-    </div>
-
-    <div class="page-inner" v-else-if="gp">
-      <!-- Header -->
-      <div class="top-bar">
-        <button class="back-btn" @click="router.push(`/works/${route.params.id}`)">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-            <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/>
-          </svg>
-          返回作品
-        </button>
-        <button class="act-btn del" @click="del" :disabled="deleting">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-            <path fill-rule="evenodd" d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c-.84 0-1.673.025-2.5.075V3.75c0-.69.56-1.25 1.25-1.25h2.5c.69 0 1.25.56 1.25 1.25v.325C11.673 4.025 10.84 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z" clip-rule="evenodd"/>
-          </svg>
-          删除
-        </button>
+  <div class="page narrow">
+    <!-- 加载骨架 -->
+    <template v-if="loading">
+      <div class="crumb" aria-hidden="true"><SkeletonBlock h="14px" w="220px" /></div>
+      <div class="gp-head" aria-hidden="true">
+        <SkeletonBlock h="96px" w="72px" radius="8px" />
+        <div class="gp-head-text">
+          <SkeletonBlock h="12px" w="120px" />
+          <SkeletonBlock h="26px" w="200px" radius="6px" />
+        </div>
       </div>
-
-      <!-- Breadcrumb -->
-      <div class="breadcrumb">
-        <span class="bread-parent">{{ workTitle }}</span>
-        <span class="bread-sep">&rsaquo;</span>
-        <span class="bread-current">{{ gp.name }}</span>
+      <div class="layout" aria-busy="true">
+        <div>
+          <span class="sr-only">正在读取游戏配置</span>
+          <SkeletonBlock v-for="h in [180, 150, 130]" :key="h" :h="h + 'px'" w="100%" radius="var(--radius-lg)" class="skel-sec" />
+        </div>
+        <div class="side"><SkeletonBlock h="200px" w="100%" radius="var(--radius-lg)" /></div>
       </div>
+    </template>
 
-      <!-- Card -->
-      <div class="detail-card" :style="{ '--cat-color': 'var(--c-game)' }">
-        <!-- Section: Status -->
-        <div class="section">
-          <h3 class="section-title">状态</h3>
-          <div class="status-row">
-            <button
-              v-for="opt in statusOptions"
-              :key="opt.key"
-              class="st-opt"
-              :class="{ on: gp.status === opt.key }"
-              :style="gp.status === opt.key ? { background: statusBgMap[opt.key], color: '#fff' } : {}"
-              @click="gp.status = opt.key"
-            >
-              {{ opt.label }}
-            </button>
-          </div>
-        </div>
+    <!-- 错误态 -->
+    <StateBlock
+      v-else-if="error"
+      kind="error"
+      title="这套配置没能打开"
+      message="本地服务暂时没有响应。已保存的配置、模组和附件不会丢失，稍后重试即可。"
+      @retry="load"
+    >
+      <button class="ghost-btn" @click="router.push(`/works/${route.params.id}`)">回到作品详情</button>
+    </StateBlock>
 
-        <!-- Section: Progress type + stepper -->
-        <div class="section">
-          <h3 class="section-title">进度类型</h3>
-          <div class="pt-options">
-            <button
-              v-for="pt in progressTypes"
-              :key="pt.key"
-              class="pt-opt"
-              :class="{ on: (gp.progress_type || 'none') === pt.key }"
-              @click="setProgressType(pt.key)"
-              :title="pt.desc"
-            >
-              {{ pt.label }}
-            </button>
-          </div>
+    <!-- 非游戏品类 -->
+    <StateBlock
+      v-else-if="!isGame"
+      kind="error"
+      title="只有游戏可以添加配置"
+      message="番剧、小说、漫画的进度直接在作品详情页记录。"
+    >
+      <button class="ghost-btn" @click="router.push('/')">回到收藏</button>
+    </StateBlock>
 
-          <div v-if="(gp.progress_type || 'none') !== 'none'" class="progress-row">
-            <button class="step-btn" @click="stepProgress(-1)" :disabled="stepping || !gp.progress_value">
-              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                <path fill-rule="evenodd" d="M4 10a.75.75 0 01.75-.75h10.5a.75.75 0 010 1.5H4.75A.75.75 0 014 10z" clip-rule="evenodd"/>
-              </svg>
-            </button>
-            <input
-              v-model.number="gp.progress_value"
-              type="number"
-              min="0"
-              class="progress-inp"
-              :placeholder="(gp.progress_type || 'none') === 'percent' ? '0' : '0'"
-            />
-            <button class="step-btn" @click="stepProgress(1)" :disabled="stepping || (gp.progress_type || 'none') === 'none'">
-              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-                <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z"/>
-              </svg>
-            </button>
-            <span class="stepper-label">{{ progressLabel }}</span>
-          </div>
-        </div>
+    <!-- 满载 -->
+    <template v-else-if="gp">
+      <nav class="crumb" aria-label="路径">
+        <router-link to="/">收藏</router-link>
+        <span class="sep" aria-hidden="true">/</span>
+        <router-link :to="`/works/${route.params.id}`">{{ work?.title }}</router-link>
+        <span class="sep" aria-hidden="true">/</span>
+        <span aria-current="page">{{ gp.name }}</span>
+      </nav>
 
-        <!-- Section: 游玩记录 -->
-        <div class="section">
-          <h3 class="section-title">游玩记录</h3>
-          <div class="record-grid">
-            <label class="rec-item">
-              <span>开始时间</span>
-              <input type="date" v-model="gp.start_date" />
-            </label>
-            <label class="rec-item">
-              <span>完成时间</span>
-              <input type="date" v-model="gp.finish_date" />
-            </label>
-            <label class="rec-item">
-              <span>游玩时长（小时）</span>
-              <input type="number" min="0" step="0.1" v-model="gp.playtime_hours" placeholder="0" />
-            </label>
-            <label class="rec-item rec-full">
-              <span>来源</span>
-              <input v-model="gp.source" placeholder="CurseForge / B站UP主 / Steam创意工坊 / 自己整合..." />
-            </label>
-          </div>
-        </div>
-
-        <!-- Section: 模组列表 -->
-        <div class="section">
-          <h3 class="section-title">模组列表</h3>
-          <div class="mods-tags">
-            <span v-for="mod in modsList" :key="mod" class="mod-tag">
-              {{ mod }}
-              <button class="mod-remove" @click="removeMod(mod)" title="移除">&times;</button>
+      <header class="gp-head">
+        <div
+          class="th"
+          :style="work?.cover_url
+            ? { background: `url(${worksApi.coverUrl(work.id)}) center/cover no-repeat` }
+            : { background: 'linear-gradient(135deg, var(--c-game), var(--c-game-light))' }"
+          aria-hidden="true"
+        />
+        <div class="gp-head-text">
+          <p class="eyebrow">游戏配置 #{{ gp.id }}</p>
+          <h1 class="gp-title">{{ gp.name }}</h1>
+          <p class="gp-sub">
+            {{ work?.title }} ·
+            <span class="stamp-wrap" :style="{ '--sc': gpStatusColor }">
+              <StatusStamp category="game" :status="gp.status" />
             </span>
-            <button v-if="!showModInput" class="add-mod-btn" @click="showModInput = true">+ 添加</button>
-          </div>
-          <div v-if="showModInput" class="mod-input-area">
-            <textarea
-              v-model="modInputText"
-              placeholder="粘贴模组列表（每行一个）..."
-              rows="4"
-              class="mod-textarea"
-            />
-            <div class="mod-input-ft">
-              <button class="mod-cancel" @click="showModInput = false; modInputText = ''">取消</button>
-              <button class="mod-confirm" @click="addMods">确定</button>
-            </div>
-          </div>
+          </p>
         </div>
+        <div class="gp-act">
+          <button class="danger-btn" @click="showDel = true">删除配置</button>
+        </div>
+      </header>
 
-        <!-- Section: 附件 -->
-        <div class="section">
-          <h3 class="section-title">附件</h3>
-          <div v-if="attachments.length" class="att-list">
-            <div v-for="att in attachments" :key="att.id" class="att-item">
-              <div class="att-info">
-                <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" class="att-icon">
-                  <path d="M7 3.5A1.5 1.5 0 005.5 5v13a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V5A1.5 1.5 0 0013 3.5H7z"/>
-                </svg>
-                <span class="att-name">{{ att.file_name }}</span>
-                <span class="att-size" v-if="att.file_size">({{ (att.file_size / 1024).toFixed(1) }} KB)</span>
-              </div>
-              <div class="att-actions">
-                <button class="att-btn" @click="downloadAttachment(att.id)">下载</button>
-                <button class="att-btn del" @click="deleteAttachment(att.id)">删除</button>
-              </div>
-            </div>
+      <div class="layout">
+        <GameProfileForm
+          :gp="gp"
+          :saving="saving"
+          :dirty="dirty"
+          :cancel-to="`/works/${route.params.id}`"
+          @save="save"
+        >
+          <template #extra>
+            <!-- 附件 -->
+            <section class="panel sec">
+              <div class="panel-title">附件</div>
+              <ul class="files">
+                <li v-for="att in attachments" :key="att.id">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14" class="f-icon" aria-hidden="true">
+                    <path d="M7 3.5A1.5 1.5 0 005.5 5v13a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V5A1.5 1.5 0 0013 3.5H7z"/>
+                  </svg>
+                  <span class="f-name">{{ att.file_name }}</span>
+                  <span v-if="att.file_size" class="f-size mono">{{ (att.file_size / 1024).toFixed(1) }} KB</span>
+                  <button class="f-btn" type="button" @click="downloadAttachment(att.id)">下载</button>
+                  <button class="f-btn del" type="button" @click="deleteAttachment(att.id)">删除</button>
+                </li>
+              </ul>
+              <label
+                class="drop"
+                :class="{ over: dragOver, uploading }"
+                @dragover.prevent="dragOver = true"
+                @dragleave="dragOver = false"
+                @drop.prevent="onDrop"
+              >
+                {{ uploading ? '上传中...' : '拖入文件或点击上传（存档、配置、截图，单个 ≤ 20 MB）' }}
+                <input type="file" multiple class="sr-only" @change="onPick" :disabled="uploading">
+              </label>
+            </section>
+          </template>
+        </GameProfileForm>
+
+        <!-- 侧栏：同一游戏的其他配置 -->
+        <aside class="side" aria-label="同一游戏的其他配置">
+          <div class="panel others">
+            <div class="panel-title">{{ work?.title }} 的配置</div>
+            <router-link
+              v-for="x in work?.game_profiles || []"
+              :key="x.id"
+              :to="`/works/${route.params.id}/game-profiles/${x.id}`"
+              :aria-current="x.id === gp.id ? 'page' : undefined"
+            >
+              <span class="o-name">{{ x.name }}</span>
+              <span class="o-stamp" :style="{ '--sc': STATUS_COLORS[x.status] || 'var(--s-wish)' }">
+                <StatusStamp category="game" :status="x.status" />
+              </span>
+            </router-link>
+            <router-link class="o-new" :to="`/works/${route.params.id}/game-profiles/new`">＋ 新增配置</router-link>
           </div>
-          <div class="upload-row">
-            <label class="upload-btn" :class="{ uploading }">
-              <input type="file" class="file-inp" @change="uploadAttachment" :disabled="uploading" />
-              {{ uploading ? '上传中...' : '+ 上传文件' }}
-            </label>
-          </div>
-        </div>
-
-        <!-- Section: 评分 -->
-        <div class="section">
-          <h3 class="section-title">评分</h3>
-          <div class="rating-row">
-            <input v-model.number="gp.rating" type="range" min="0" max="10" class="rating-slider" />
-            <span class="rating-val">{{ gp.rating != null ? gp.rating : '—' }}/10</span>
-          </div>
-        </div>
-
-        <!-- Section: 评价 -->
-        <div class="section">
-          <h3 class="section-title">评价</h3>
-          <textarea v-model="gp.review" class="text-inp" rows="3" placeholder="写下你的评价..." />
-        </div>
-
-        <!-- Section: 笔记 -->
-        <div class="section">
-          <h3 class="section-title">笔记</h3>
-          <textarea v-model="gp.notes" class="text-inp" rows="4" placeholder="游玩心得、备忘..." />
-        </div>
-
-        <!-- Save -->
-        <button class="save-btn" @click="save" :disabled="saving">
-          {{ saving ? '保存中...' : '保存' }}
-        </button>
+        </aside>
       </div>
-    </div>
 
-    <div class="page-inner" v-else>
-      <div class="empty">
-        <p>配置不存在</p>
-        <button class="back-btn" @click="router.back()">返回</button>
-      </div>
-    </div>
+      <!-- 删除确认 -->
+      <BaseModal :open="showDel" size="sm" @close="showDel = false">
+        <template #head><h2>删除这套配置？</h2></template>
+        <p class="del-txt">
+          「{{ gp.name }}」的进度、模组列表、附件和笔记会一起删除，不影响同一游戏的其他配置。
+        </p>
+        <template #foot>
+          <button class="ghost-btn" type="button" @click="showDel = false">保留</button>
+          <button class="danger-solid-btn" type="button" :disabled="deleting" @click="del">
+            {{ deleting ? '删除中...' : '删除配置' }}
+          </button>
+        </template>
+      </BaseModal>
+    </template>
   </div>
 </template>
 
 <style scoped>
-/* ===== Layout ===== */
-.page { padding: 20px 16px; }
-@media (max-width: 767px) { .page { padding-top: 0; } }
-@media (min-width: 768px) { .page { padding: 24px 32px; } }
-.page-inner { max-width: 600px; margin: 0 auto; }
-.loading, .empty { text-align: center; padding: 80px 20px; color: var(--text-tertiary); }
+.page { padding: 20px 16px 64px; }
+@media (min-width: 768px) { .page { padding: 24px 32px 64px; } }
+.page.narrow { max-width: 1080px; margin: 0 auto; }
+.mono { font-family: var(--font-mono); }
 
-/* Header */
-.top-bar {
+.crumb {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 6px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
-.back-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--text-tertiary);
-  transition: all 0.15s;
-}
-.back-btn:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
-.act-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  color: var(--text-tertiary);
-  transition: all 0.15s;
-}
-.act-btn:hover { background: var(--bg-surface); }
-.act-btn.del:hover { color: var(--c-anime); }
-.act-btn:disabled { opacity: 0.4; }
+.crumb a:hover { color: var(--text-primary); text-decoration: underline; }
+.crumb .sep { color: var(--text-tertiary); opacity: 0.4; }
+.crumb [aria-current='page'] { color: var(--text-primary); font-weight: 700; }
 
-/* Breadcrumb */
-.breadcrumb {
+.gp-head {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
   margin-bottom: 24px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--fs-sm);
 }
-.bread-parent { color: var(--text-tertiary); }
-.bread-sep { color: var(--text-tertiary); opacity: 0.4; }
-.bread-current { color: var(--text-primary); font-weight: 700; }
+.gp-head .th {
+  width: 72px;
+  aspect-ratio: 3 / 4.2;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 0 2.5px var(--c-game), 0 0 0 5px var(--bg-surface), 0 0 0 6px var(--line, rgba(0,0,0,0.09));
+}
+.gp-head-text { min-width: 0; }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+.gp-title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.3px; }
+.gp-sub { color: var(--text-secondary); font-size: var(--fs-sm); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.stamp-wrap :deep(.stamp) { animation: none; }
+.danger-btn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--s-dropped);
+  background: var(--bg-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--s-dropped) 40%, transparent);
+}
+.danger-btn:hover { background: color-mix(in srgb, var(--s-dropped) 10%, var(--bg-surface)); }
 
-/* Card */
-.detail-card {
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+  align-items: start;
+}
+.side { position: sticky; top: calc(var(--topbar-height) + 16px); display: flex; flex-direction: column; gap: 12px; }
+.panel {
   background: var(--bg-surface);
   border-radius: var(--radius-lg);
-  padding: 28px;
-  box-shadow:
-    0 0 0 1px var(--frame-outer-line),
-    0 0 0 2px rgba(255,255,255,0.5),
-    0 0 0 3px var(--cat-color, transparent),
-    var(--shadow-md);
-  position: relative;
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--color-border);
+  padding: 16px;
 }
-@media (max-width: 767px) { .detail-card { padding: 20px; } }
-@media (max-width: 480px) {
-  .detail-card { padding: 16px; }
-  .top-bar { flex-wrap: wrap; gap: 8px; }
-  .back-btn, .act-btn { padding: 8px 12px; font-size: var(--fs-xs); }
-  .st-opt { height: 28px; padding: 0 12px; font-size: 11px; }
-  .pt-opt { height: 28px; padding: 0 12px; font-size: 11px; }
-  .section { margin-bottom: 20px; }
-  .att-item { flex-wrap: wrap; gap: 6px; }
-  .att-info { min-width: 0; width: 100%; }
-  .att-actions { margin-left: auto; }
-  .mods-tags { gap: 4px; }
-  .mod-tag { font-size: 10px; padding: 3px 8px; }
-}
-
-/* Sections */
-.section { margin-bottom: 28px; }
-.section:last-of-type { margin-bottom: 24px; }
-.section-title {
-  font-size: var(--fs-xs);
-  font-weight: 700;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin-bottom: 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-/* Status */
-.status-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.st-opt {
-  height: 32px;
-  padding: 0 16px;
-  border-radius: var(--radius-full);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
-  background: var(--bg-primary);
-  border: 1px solid var(--color-border);
-  transition: all 0.15s;
-}
-.st-opt:hover { border-color: var(--text-tertiary); }
-.st-opt:active { transform: none; }
-.st-opt.on { border-color: transparent; }
-
-/* Progress type */
-.pt-options { display: flex; gap: 8px; margin-bottom: 14px; }
-.pt-opt {
-  height: 32px;
-  padding: 0 16px;
-  border-radius: var(--radius-md);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
-  background: var(--bg-primary);
-  border: 1px solid var(--color-border);
-  transition: all 0.15s;
-}
-.pt-opt:hover { border-color: var(--text-tertiary); }
-.pt-opt:active { transform: none; }
-.pt-opt.on {
-  background: var(--c-game);
-  color: white;
-  border-color: transparent;
-}
-
-/* Progress stepper */
-.progress-row {
+.panel-title {
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.step-btn {
-  width: 36px; height: 36px;
-  display: flex; align-items: center; justify-content: center;
-  border-radius: var(--radius-md);
-  background: var(--bg-primary);
-  border: 1px solid var(--color-border);
+  gap: 8px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
   color: var(--text-secondary);
-  transition: all 0.15s;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
 }
-.step-btn:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
-.step-btn:disabled { opacity: 0.3; cursor: default; }
-.progress-inp {
-  width: 100px;
-  text-align: center;
-  font-size: var(--fs-xl);
-  font-weight: 700;
-  padding: 8px 12px;
-  -moz-appearance: textfield;
-}
-.progress-inp::-webkit-outer-spin-button,
-.progress-inp::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.stepper-label {
-  font-size: var(--fs-sm);
-  font-weight: 700;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-
-/* Play records */
-.record-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-@media (max-width: 767px) {
-  .record-grid { grid-template-columns: 1fr; gap: 10px; }
-}
-.rec-item {
+.panel-title::after { content: ''; flex: 1; height: 1px; background: var(--line, rgba(0,0,0,0.09)); }
+.others a {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-.rec-item span {
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
-}
-.rec-item input {
-  padding: 8px 12px;
-  font-size: var(--fs-sm);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--bg-primary);
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-}
-.rec-item input:focus { border-color: var(--text-tertiary); background: var(--bg-surface); outline: none; }
-.rec-item input[type="date"]::-webkit-calendar-picker-indicator {
-  display: none;
-}
-@media (max-width: 480px) {
-  .rec-item input { padding: 6px 8px; }
-}
-.rec-full { grid-column: 1 / -1; }
-
-/* Mods list */
-.mods-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
-.mod-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  background: var(--c-game-bg);
-  color: var(--c-game);
-  border: 1px solid rgba(255, 122, 0, 0.15);
-}
-.mod-remove {
-  font-size: 14px;
-  line-height: 1;
-  color: inherit;
-  opacity: 0.5;
-  transition: opacity 0.15s;
-  padding: 0;
-}
-.mod-remove:hover { opacity: 1; }
-.add-mod-btn {
-  height: 28px;
-  padding: 0 12px;
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--primary);
-  background: var(--primary-light);
-  border: 1px dashed var(--primary);
-  transition: all 0.15s;
-}
-.add-mod-btn:hover { background: rgba(255, 107, 53, 0.14); }
-.mod-input-area { margin-top: 10px; }
-.mod-textarea {
-  width: 100%;
-  resize: vertical;
-  min-height: 80px;
-  font-size: var(--fs-sm);
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--bg-primary);
-}
-.mod-textarea:focus { border-color: var(--text-tertiary); background: var(--bg-surface); outline: none; }
-.mod-input-ft { display: flex; justify-content: flex-end; gap: 6px; margin-top: 8px; }
-.mod-cancel {
-  height: 30px;
-  padding: 0 14px;
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
-}
-.mod-cancel:hover { color: var(--text-primary); }
-.mod-confirm {
-  height: 30px;
-  padding: 0 16px;
-  border-radius: var(--radius-sm);
-  background: var(--primary);
-  color: white;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-}
-.mod-confirm:hover { background: var(--primary-hover); }
-
-/* Attachments */
-.att-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
-.att-item {
-  display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   padding: 8px 10px;
   border-radius: var(--radius-sm);
-  background: var(--bg-primary);
-  border: 1px solid var(--color-border);
+  font-size: var(--fs-sm);
+  min-height: 40px;
+  color: var(--text-primary);
 }
-.att-info {
+.others a:hover { background: var(--bg-surface-hover); }
+.others a[aria-current='page'] { background: var(--bg-input); font-weight: 700; }
+.others .o-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.others .o-stamp :deep(.stamp) { animation: none; }
+.o-new {
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.o-new:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+
+/* 附件（在表单 #extra 槽内，样式与表单面板一致） */
+.panel.sec { margin-top: 16px; }
+.files { list-style: none; display: flex; flex-direction: column; gap: 6px; padding: 0; margin: 0 0 10px; }
+.files li {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  font-size: var(--fs-sm);
 }
-.att-icon { color: var(--text-tertiary); flex-shrink: 0; }
-.att-name { font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.att-size { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
-.att-actions { display: flex; gap: 4px; flex-shrink: 0; }
-.att-btn {
-  padding: 2px 8px;
+.f-icon { color: var(--text-tertiary); flex: none; }
+.f-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.f-size { font-size: 11px; color: var(--text-tertiary); flex: none; }
+.f-btn {
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 600;
   color: var(--text-secondary);
-  transition: all 0.1s;
+  flex: none;
 }
-.att-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
-.att-btn.del:hover { color: var(--c-anime); }
-.upload-row { margin-top: 2px; }
-.upload-btn {
-  display: inline-flex;
-  align-items: center;
-  height: 30px;
-  padding: 0 14px;
-  border-radius: var(--radius-sm);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--primary);
-  background: var(--primary-light);
-  border: 1px dashed var(--primary);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.upload-btn:hover { background: rgba(255, 107, 53, 0.14); }
-.upload-btn.uploading { opacity: 0.6; pointer-events: none; }
-.file-inp { display: none; }
-
-/* Rating */
-.rating-row {
+.f-btn:hover { background: var(--bg-surface); color: var(--text-primary); }
+.f-btn.del:hover { color: var(--s-dropped); }
+.drop {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-.rating-slider {
-  flex: 1;
-  height: 6px;
-  -webkit-appearance: none;
-  appearance: none;
-  background: var(--bg-input);
-  border-radius: 3px;
-  outline: none;
-  padding: 0;
-}
-.rating-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: var(--primary);
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-}
-.rating-val { font-size: var(--fs-lg); font-weight: 700; color: var(--text-secondary); min-width: 48px; }
-
-/* Text inputs */
-.text-inp {
-  width: 100%;
-  resize: vertical;
-  min-height: 72px;
-  font-size: var(--fs-base);
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  background: var(--bg-primary);
-}
-.text-inp:focus { border-color: var(--text-tertiary); background: var(--bg-surface); outline: none; }
-
-/* Save */
-@media (max-width: 480px) {
-  .progress-row { gap: 8px; }
-  .step-btn { width: 32px; height: 32px; }
-  .progress-inp { width: 72px; font-size: var(--fs-lg); padding: 6px 8px; }
-  .stepper-label { font-size: var(--fs-xs); }
-  .save-btn { height: 44px; font-size: var(--fs-base); }
-}
-.save-btn {
-  width: 100%;
-  height: 42px;
+  justify-content: center;
+  gap: 8px;
+  min-height: 56px;
+  border: 1.5px dashed var(--line, rgba(0,0,0,0.09));
   border-radius: var(--radius-md);
-  background: var(--primary);
-  color: white;
-  font-size: var(--fs-base);
-  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
   transition: all 0.15s;
+  text-align: center;
+  padding: 8px;
 }
-.save-btn:hover { background: var(--primary-hover); }
-.save-btn:disabled { opacity: 0.5; cursor: default; }
+.drop:hover, .drop.over {
+  border-color: var(--c-game);
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--c-game) 6%, transparent);
+}
+.drop.uploading { opacity: 0.6; pointer-events: none; }
 
-/* 触屏：操作控件达到 44px 触控目标（Q3 决策） */
+.ghost-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ghost-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
+.del-txt { font-size: var(--fs-sm); color: var(--text-secondary); }
+.danger-solid-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  background: var(--s-dropped);
+  color: #fff;
+}
+.danger-solid-btn:hover:not(:disabled) { background: color-mix(in srgb, var(--s-dropped) 85%, black); }
+.danger-solid-btn:disabled { opacity: 0.5; }
+
+.skel-sec { display: block; margin-bottom: 16px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .side { position: static; order: -1; }
+}
+@media (max-width: 767px) {
+  .gp-head { grid-template-columns: 56px minmax(0, 1fr); }
+  .gp-head .th { width: 56px; }
+  .gp-act { grid-column: 1 / -1; }
+}
+
+/* 触屏：操作控件达到 44px 触控目标（Q3 决策；表单内部控件在 GameProfileForm 内处理） */
 @media (pointer: coarse) {
-  .st-opt, .pt-opt, .add-mod-btn, .mod-cancel, .mod-confirm, .upload-btn, .save-btn { min-height: 44px; }
-  .step-btn { width: 44px; height: 44px; }
+  .danger-btn, .ghost-btn, .danger-solid-btn, .f-btn { min-height: 44px; }
+  .others a, .o-new { min-height: 44px; }
 }
 </style>

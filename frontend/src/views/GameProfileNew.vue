@@ -1,30 +1,75 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { gameProfilesApi } from '../api/client'
+import { worksApi, gameProfilesApi } from '../api/client'
+import { emptyToNull } from '../utils/payload'
 import { showToast } from '../utils/toast'
+import GameProfileForm from '../components/work/GameProfileForm.vue'
+import StateBlock from '../components/common/StateBlock.vue'
+import SkeletonBlock from '../components/common/SkeletonBlock.vue'
 
 const route = useRoute()
 const router = useRouter()
 
-const form = ref({ name: '本体', status: 'wish' })
+const work = ref(null)
+const gp = ref({
+  name: '',
+  status: 'wish',
+  progress_type: 'none',
+  progress_value: null,
+  rating: null,
+  review: null,
+  start_date: null,
+  finish_date: null,
+  playtime_hours: null,
+  source: null,
+  mods_list: null,
+  notes: null,
+})
+const loading = ref(true)
+const error = ref(false)
 const saving = ref(false)
-const error = ref('')
+
+const isGame = computed(() => (work.value?.category || 'game') === 'game')
+
+async function load() {
+  loading.value = true
+  error.value = false
+  try {
+    const { data } = await worksApi.get(route.params.id)
+    work.value = data
+  } catch (e) {
+    console.error('Failed to load work', e)
+    error.value = true
+  } finally {
+    loading.value = false
+  }
+}
+onMounted(load)
 
 async function submit() {
-  if (!form.value.name.trim()) {
-    error.value = '请输入配置名称'
-    return
-  }
   saving.value = true
-  error.value = ''
   try {
-    const { data } = await gameProfilesApi.create(route.params.id, form.value)
+    const body = emptyToNull({
+      name: gp.value.name,
+      progress_value: gp.value.progress_value,
+      progress_type: gp.value.progress_type,
+      status: gp.value.status,
+      rating: gp.value.rating,
+      review: gp.value.review,
+      start_date: gp.value.start_date,
+      finish_date: gp.value.finish_date,
+      playtime_hours: gp.value.playtime_hours,
+      source: gp.value.source,
+      mods_list: gp.value.mods_list,
+      notes: gp.value.notes,
+    }, ['progress_value', 'rating', 'playtime_hours'])
+    const { data } = await gameProfilesApi.create(route.params.id, body)
     showToast('配置已创建')
     router.push(`/works/${route.params.id}/game-profiles/${data.id}`)
   } catch (e) {
-    error.value = e.response?.data?.detail || '创建失败'
-    showToast('创建失败', 'error')
+    console.error('Create failed', e)
+    showToast(e.response?.data?.detail || '创建失败', 'error')
   } finally {
     saving.value = false
   }
@@ -32,125 +77,133 @@ async function submit() {
 </script>
 
 <template>
-  <div class="page">
-    <div class="page-inner">
-      <div class="top-bar">
-        <button class="back-btn" @click="router.back()">
-          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
-            <path fill-rule="evenodd" d="M17 10a.75.75 0 01-.75.75H5.612l4.158 3.96a.75.75 0 11-1.04 1.08l-5.5-5.25a.75.75 0 010-1.08l5.5-5.25a.75.75 0 111.04 1.08L5.612 9.25H16.25A.75.75 0 0117 10z" clip-rule="evenodd"/>
-          </svg>
-          返回
-        </button>
-      </div>
-
-      <h1 class="page-title">新增游戏配置</h1>
-
-      <div class="form">
-        <div class="field">
-          <label class="label">配置名称</label>
-          <input v-model="form.name" type="text" class="inp" placeholder="如：本体、整合包、自打模组" />
+  <div class="page narrow">
+    <!-- 加载骨架 -->
+    <template v-if="loading">
+      <div class="crumb" aria-hidden="true"><SkeletonBlock h="14px" w="220px" /></div>
+      <div class="gp-head" aria-hidden="true">
+        <SkeletonBlock h="96px" w="72px" radius="8px" />
+        <div class="gp-head-text">
+          <SkeletonBlock h="12px" w="120px" />
+          <SkeletonBlock h="26px" w="200px" radius="6px" />
         </div>
-
-        <div class="field">
-          <label class="label">初始状态</label>
-          <div class="status-row">
-            <button
-              v-for="opt in [
-                { key: 'wish', label: '想玩' }, { key: 'playing', label: '在玩' },
-                { key: 'completed', label: '通关' }, { key: 'dropped', label: '弃坑' },
-                { key: 'wait_buy', label: '等购买' }, { key: 'wait_sale', label: '等折扣' },
-              ]"
-              :key="opt.key"
-              class="st-opt"
-              :class="{ on: form.status === opt.key }"
-              @click="form.status = opt.key"
-            >
-              {{ opt.label }}
-            </button>
-          </div>
-        </div>
-
-        <p v-if="error" class="error">{{ error }}</p>
-
-        <button class="save-btn" @click="submit" :disabled="saving">
-          {{ saving ? '创建中...' : '创建配置' }}
-        </button>
       </div>
-    </div>
+      <div aria-busy="true">
+        <span class="sr-only">正在读取作品信息</span>
+        <SkeletonBlock v-for="h in [180, 150]" :key="h" :h="h + 'px'" w="100%" radius="var(--radius-lg)" class="skel-sec" />
+      </div>
+    </template>
+
+    <!-- 错误态 -->
+    <StateBlock
+      v-else-if="error"
+      kind="error"
+      title="作品信息没能打开"
+      message="本地服务暂时没有响应，稍后重试即可。"
+      @retry="load"
+    >
+      <button class="ghost-btn" @click="router.push(`/works/${route.params.id}`)">回到作品详情</button>
+    </StateBlock>
+
+    <!-- 非游戏品类 -->
+    <StateBlock
+      v-else-if="!isGame"
+      kind="error"
+      title="只有游戏可以添加配置"
+      message="番剧、小说、漫画的进度直接在作品详情页记录。"
+    >
+      <button class="ghost-btn" @click="router.push('/')">回到收藏</button>
+    </StateBlock>
+
+    <!-- 表单 -->
+    <template v-else>
+      <nav class="crumb" aria-label="路径">
+        <router-link to="/">收藏</router-link>
+        <span class="sep" aria-hidden="true">/</span>
+        <router-link :to="`/works/${route.params.id}`">{{ work?.title }}</router-link>
+        <span class="sep" aria-hidden="true">/</span>
+        <span aria-current="page">新增配置</span>
+      </nav>
+
+      <header class="gp-head">
+        <div
+          class="th"
+          :style="work?.cover_url
+            ? { background: `url(${worksApi.coverUrl(work.id)}) center/cover no-repeat` }
+            : { background: 'linear-gradient(135deg, var(--c-game), var(--c-game-light))' }"
+          aria-hidden="true"
+        />
+        <div class="gp-head-text">
+          <p class="eyebrow">游戏配置 · 新建</p>
+          <h1 class="gp-title">新增一套配置</h1>
+          <p class="gp-sub">{{ work?.title }} · 本体、周目、整合包或 DLC，各自独立追踪</p>
+        </div>
+      </header>
+
+      <GameProfileForm
+        :gp="gp"
+        is-new
+        :saving="saving"
+        cancel-to="/"
+        @save="submit"
+      />
+    </template>
   </div>
 </template>
 
 <style scoped>
-.page { padding: 20px 16px; }
-@media (max-width: 767px) { .page { padding-top: 0; } }
-@media (min-width: 768px) { .page { padding: 24px 32px; } }
-.page-inner { max-width: 500px; margin: 0 auto; }
+.page { padding: 20px 16px 64px; }
+@media (min-width: 768px) { .page { padding: 24px 32px 64px; } }
+.page.narrow { max-width: 1080px; margin: 0 auto; }
 
-.top-bar { margin-bottom: 20px; }
-.back-btn {
-  display: inline-flex;
+.crumb {
+  display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.crumb a:hover { color: var(--text-primary); text-decoration: underline; }
+.crumb .sep { color: var(--text-tertiary); opacity: 0.4; }
+.crumb [aria-current='page'] { color: var(--text-primary); font-weight: 700; }
+
+.gp-head {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.gp-head .th {
+  width: 72px;
+  aspect-ratio: 3 / 4.2;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 0 0 2.5px var(--c-game), 0 0 0 5px var(--bg-surface), 0 0 0 6px var(--line, rgba(0,0,0,0.09));
+}
+.gp-head-text { min-width: 0; }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+}
+.gp-title { font-size: var(--fs-2xl); font-weight: 800; letter-spacing: -0.3px; }
+.gp-sub { color: var(--text-secondary); font-size: var(--fs-sm); }
+
+.skel-sec { display: block; margin-bottom: 16px; }
+
+.ghost-btn {
+  height: 40px;
+  padding: 0 16px;
   border-radius: var(--radius-md);
   font-size: var(--fs-sm);
   font-weight: 600;
-  color: var(--text-tertiary);
-  transition: all 0.15s;
+  color: var(--text-secondary);
 }
-.back-btn:hover { color: var(--text-primary); background: var(--bg-surface-hover); }
-
-.page-title { font-size: var(--fs-2xl); font-weight: 800; margin-bottom: 28px; }
-
-.form { display: flex; flex-direction: column; gap: 20px; }
-.field { }
-.label {
-  display: block;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.inp { width: 100%; }
-
-.status-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.st-opt {
-  height: 30px;
-  padding: 0 14px;
-  border-radius: var(--radius-full);
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--text-tertiary);
-  background: var(--bg-surface);
-  border: 1px solid var(--color-border);
-  transition: all 0.15s;
-}
-.st-opt:hover { border-color: var(--text-tertiary); }
-.st-opt.on {
-  background: var(--primary);
-  color: white;
-  border-color: transparent;
-}
-
-.error { font-size: var(--fs-sm); color: var(--c-anime); }
-
-.save-btn {
-  width: 100%;
-  height: 42px;
-  border-radius: var(--radius-md);
-  background: var(--primary);
-  color: white;
-  font-size: var(--fs-base);
-  font-weight: 700;
-  transition: all 0.15s;
-}
-.save-btn:hover { background: var(--primary-hover); }
-.save-btn:disabled { opacity: 0.5; cursor: default; }
-
-/* 触屏：操作控件达到 44px 触控目标（Q3 决策） */
-@media (pointer: coarse) {
-  .st-opt, .back-btn, .save-btn { min-height: 44px; }
-}
+.ghost-btn:hover { background: var(--bg-surface-hover); color: var(--text-primary); }
 </style>
