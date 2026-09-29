@@ -10,6 +10,7 @@ from ..database import get_db
 from ..models.work import Work, WorkStatus
 from ..models.game_profile import GameProfile, GameStatus
 from ..models.tag import Tag, WorkTag
+from ..bangumi_client import bangumi_get, BANGUMI_API_BASE
 from ..schemas.work import WorkCreate, WorkUpdate, WorkResponse, WorkListItem, PaginatedWorks
 from ..utils import record_timeline
 from ..schemas.game_profile import GameProfileResponse
@@ -78,21 +79,11 @@ def list_works(
     )
 
 
-BANGUMI_HEADERS = {
-    "User-Agent": "list-mate/1.0 (personal project)",
-}
-
-
 def _fetch_bangumi_subject(bangumi_id: int) -> str | None:
     """Fetch Bangumi subject detail and return JSON string of relevant metadata."""
     import json
     try:
-        resp = httpx.get(
-            f"https://api.bgm.tv/v0/subjects/{bangumi_id}",
-            headers=BANGUMI_HEADERS,
-            timeout=10,
-        )
-        resp.raise_for_status()
+        resp = bangumi_get(f"{BANGUMI_API_BASE}/v0/subjects/{bangumi_id}")
         data = resp.json()
         return json.dumps({
             "date": data.get("date"),
@@ -103,7 +94,7 @@ def _fetch_bangumi_subject(bangumi_id: int) -> str | None:
             "infobox": data.get("infobox", []),
             "tags": [t["name"] for t in data.get("tags", [])[:20]],
         }, ensure_ascii=False)
-    except httpx.RequestError:
+    except (httpx.RequestError, HTTPException):
         return None
 
 
@@ -113,10 +104,10 @@ def create_work(data: WorkCreate, db: Session = Depends(get_db)):
 
     if data.cover_url:
         try:
-            resp = httpx.get(data.cover_url, timeout=10)
+            resp = bangumi_get(data.cover_url)
             if resp.status_code == 200:
                 cover_data = resp.content
-        except httpx.RequestError:
+        except (httpx.RequestError, HTTPException):
             logger.warning(f"封面下载失败: {data.title} (URL: {data.cover_url})")
 
     create_data = data.model_dump()
@@ -191,10 +182,10 @@ def update_work(work_id: int, data: WorkUpdate, db: Session = Depends(get_db)):
 
     if "cover_url" in update_data and update_data["cover_url"] != work.cover_url:
         try:
-            resp = httpx.get(update_data["cover_url"], timeout=10)
+            resp = bangumi_get(update_data["cover_url"])
             if resp.status_code == 200:
                 update_data["cover_data"] = resp.content
-        except httpx.RequestError:
+        except (httpx.RequestError, HTTPException):
             logger.warning(f"封面下载失败: {work.title} (URL: {update_data['cover_url']})")
 
     tag_ids = update_data.pop("tag_ids", None)
