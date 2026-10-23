@@ -428,3 +428,20 @@ Q1 +1集带5秒撤销、Q2 加入想看直接调 worksApi.create、Q3 触控目�
   修 GP 详情 dirty-on-load bug（load 赋值误触发深度 watch）
 - 无后端改动；既有怪癖记录：GET /works/{id} 与 PUT 响应缺 tag_ids 字段（列表接口正常）——S2 未受影响，
   S4 详情页改造时如需单作品标签再补
+
+## UI 进化 S4-S6（2026-10-23，commit 28277ff / 3ac3be2 / d1f5073）
+
+- S4 详情页：BangumiZone 六分区（CommunityCompare S/A/B/C 分桶+百分位、BangumiInfo 全量
+  infobox+tags、EpisodeGrid 东八区今日/SP/OP/ED、CastRail、RelationRail Q2 加入想看、
+  StaffList 关键职位高亮）、DangerZone、WorkEditModal 迁出；修 3 缺陷（STATUS_LABELS
+  崩溃、create 缺 progress_unit 422、入册缺 status=wish）；bangumi_cache 图片移出仓库并
+  gitignore
+- S5 添加页壳：DiscoverTab（今日放送 22 卡/高分榜三类型）/SearchTab/ManualTab +
+  BangumiCreateModal 共用；Settings 页（主题/数据管理/关于）；AppFooter；导航 D3；
+  Search.vue 删除；/search 重定向
+- S6 统计：monthly_added 稀疏聚合 + 每月新增 12 月柱图（年份切换）；时间线类型审计收口
+- 验收方式：ZCode IAB 不可用（node REPL 缺失），全程 Chrome headless CDP（Runtime.evaluate/
+  captureScreenshot/Fetch 拦截做局部错误态）；回归 79/79；§5 替换点 grep 清零
+- 环境事故记录：项目被移至 D:/Projects/01-active/list-mate（旧路径空壳遗留 .zcode 脚本
+  可删）；交接文档与原型随 Open Design 数据丢失（findings #9）；git push 需绕过失效本地
+  代理（-c http.proxy=）

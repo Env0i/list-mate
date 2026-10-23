@@ -400,3 +400,33 @@ P0 修复完成（2026-09-27）；下一步 P1：前端常量收敛 + 死组件�
 - [x] 计数从"总数"改为"已加载/总数"（加载更多后状态更准确）
 - [x] 验证：build 通过；浏览器实测 20/26 状态下按钮出现、点击后 scrollY=0
 - **Status:** complete
+
+## 第二十七轮: UI 进化 S4——Bangumi 资料区接入详情页 ✅ (2026-10-23)
+
+- [x] 详情页新增作品资料区（BangumiZone 六分区：概要/社区对照/分集/角色/关联/制作），
+      吸顶锚点导航 + IntersectionObserver 高亮；来源行含取数时间与过期标记
+- [x] 编辑模态迁出为 WorkEditModal；DangerZone 折叠危险区 + 删除确认 BaseModal
+- [x] Q2「加入想看」：RelationRail 直接调 worksApi.create（补 progress_unit/status=wish
+      两处缺陷——缺 progress_unit 必填 422、入册语义需 wish）
+- [x] 验收方式变更：ZCode 内嵌渲染器不可用，改 Chrome headless + CDP 全链路实测
+      （六分区渲染/锚点/模态/删除 E2E/局部与整体错误态/无 bangumi_id 隐藏）；修
+      WorkDetail 残留 STATUS_LABELS 引用崩溃；回归 build 通过
+- **Status:** complete
+
+## 第二十八轮: UI 进化 S5——添加页三 Tab 合并 + 设置页 + 页脚 ✅ (2026-10-23)
+
+- [x] /add 合并 发现（calendar/ranking 消费+封面代理）/搜索（竞态守卫保留）/手动 三 Tab，
+      ?tab= 深链 + /search 重定向 + KeepAlive；入库确认模态抽共用 BangumiCreateModal
+- [x] 新增 /settings（外观主题三选 + 数据管理自统计页迁入 + 关于版本）；统计页留一行引导
+- [x] 导航 D3：桌面 收藏·添加作品·统计·标签+设置齿轮+主题；移动 首页·统计·FAB·标签·设置
+- [x] AppFooter：数据来源/本地卡册统计/版本（vite define 注入 package.json 1.1.0）
+- [x] 验证：build + CDP 实测三 Tab 深链/重定向/模态/设置页主题切换/移动底栏五槽/页脚
+- **Status:** complete
+
+## 第二十九轮: UI 进化 S6——每月新增柱图 + 时间线类型收口 ✅ (2026-10-23)
+
+- [x] /api/stats 新增 monthly_added（Q4）：按 created_at 月聚合稀疏字典，前端按年 12 月
+      柱图 + 多年份切换
+- [x] 时间线 §3.4 审计：后端仅产出 5 种 action_type 且前端 TimelineList 已全覆盖——无需改码
+- [x] 验证：api_full_test 79/79 全绿 + build + CDP 实测柱图（12 列/零月基线/aria）
+- **Status:** complete
