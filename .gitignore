@@ -33,6 +33,7 @@ Thumbs.db
 
 # Generated reports
 api_test_report.json
+api_full_test_report.json
 bench_results.json
 
 # Benchmark / review
