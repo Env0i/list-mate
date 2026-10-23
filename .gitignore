@@ -41,3 +41,6 @@ review_*.md
 
 # ZCode 本地工具缓存
 datacachepip/
+
+# Bangumi 运行时缓存（封面/详情图片，不进仓库）
+backend/bangumi_cache/

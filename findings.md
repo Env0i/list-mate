@@ -42,3 +42,10 @@
 3. **TimelineList 的 review_change 动作色**：旧代码紫色 #8b5cf6 不是 style.css 令牌，已改用 --text-secondary 中性色；如要紫色需新增令牌（违反「唯一新增 --cc-on」约束，未加）
 4. **Bangumi 搜索用 v0 POST**（决策）：硬约束「只发 GET」，但旧版 GET /search/subject/{kw} 实测忽略 type 过滤（要动画返回书籍），v0 POST + filter.type 是唯一正确口径。判定搜索 POST 为只读查询语义予以保留；若用户要求严格全 GET，可切旧版并接受无类型过滤
 5. **ui-evolution-prompts.md 验收写 ≥36px、原型 44px**：用户已拍板 44px（Q3），文档验收行未改——属历史文档，无需追改
+
+## 遗留问题清单（2026-10-23，S4 期间补充）
+
+6. **资料区子块失败静默留空**：角色/关联/制作/分集/社区对照各子块加载失败只 console.error，分区标题下留空；仅 zone 级（subject 拉取失败）有错误块 + 重新加载 + bgm.tv 直链。如需子块级重试可复用 S1 的 StateBlock，本轮未加（避免过度设计）
+7. **GET /works 列表序列化缺 bangumi_id**（既有，同第 2 条家族）：Q2「加入想看」后的回填靠 create 响应完成，不受影响；如未来需要列表态标记已入册需补字段
+8. **S4 验收方式变更**：ZCode 内嵌渲染器（IAB）不可用（会话恢复后 node REPL 缺失），改用 Chrome headless + CDP（Runtime.evaluate/Page.captureScreenshot/Fetch 拦截）完成全部交互验证；结论与真实浏览器等价
+9. **设计资料丢失**：zace-implementation-handoff.md 与 Zace 原型文件随 Open Design 应用数据清理丢失（2026-10-23 确认，全盘搜索无果）；S4-S6 验收依据以对话记录 + docs/ui-evolution-prompts.md + 代码现状为准

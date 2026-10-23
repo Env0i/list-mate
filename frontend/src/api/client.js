@@ -23,6 +23,14 @@ export const gameProfilesApi = {
 export const bangumiApi = {
   search(q, type) { return client.get('/bangumi/search', { params: { q, type } }) },
   get(id) { return client.get(`/bangumi/${id}`) },
+  episodes(id, type) { return client.get(`/bangumi/${id}/episodes`, { params: { type } }) },
+  relations(id) { return client.get(`/bangumi/${id}/relations`) },
+  characters(id) { return client.get(`/bangumi/${id}/characters`) },
+  persons(id) { return client.get(`/bangumi/${id}/persons`) },
+  calendar() { return client.get('/bangumi/calendar') },
+  ranking(type, limit) { return client.get('/bangumi/ranking', { params: { type, limit } }) },
+  // 图床代理地址（<img src> 直接用，30 天本地缓存）
+  imageUrl(url) { return `/api/bangumi/image?url=${encodeURIComponent(url)}` },
 }
 
 export const tagsApi = {
