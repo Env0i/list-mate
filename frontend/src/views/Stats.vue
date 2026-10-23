@@ -18,6 +18,10 @@ onMounted(async () => {
     ])
     stats.value = statsRes.data
     timeline.value = tlRes.data.items
+    // 默认选中最新有数据的年份（含当年）
+    if (!addedYear.value && addedYears.value.length) {
+      addedYear.value = addedYears.value[addedYears.value.length - 1]
+    }
   } catch (e) {
     console.error('Failed to load stats', e)
   } finally {
@@ -51,6 +55,23 @@ const maxStatusCount = computed(() => stats.value ? Math.max(...stats.value.stat
 const maxRatingCount = computed(() => stats.value ? Math.max(...stats.value.rating_distribution.map(r => r.count), 1) : 1)
 const monthly = computed(() => stats.value?.monthly_activity ?? [])
 const maxMonthCount = computed(() => stats.value ? Math.max(...stats.value.monthly_activity.map(m => m.operations), 1) : 1)
+
+// 每月新增（Q4）：monthly_added 为稀疏 {"YYYY-MM": count}，按年取 12 个月柱图
+const monthlyAdded = computed(() => stats.value?.monthly_added ?? {})
+const addedYears = computed(() => {
+  const ys = new Set(Object.keys(monthlyAdded.value).map(m => m.slice(0, 4)))
+  ys.add(String(new Date().getFullYear()))
+  return [...ys].sort()
+})
+const addedYear = ref('')
+const addedBars = computed(() => {
+  if (!addedYear.value) return []
+  return Array.from({ length: 12 }, (_, i) => {
+    const ym = `${addedYear.value}-${String(i + 1).padStart(2, '0')}`
+    return { month: i + 1, count: monthlyAdded.value[ym] || 0 }
+  })
+})
+const maxAdded = computed(() => Math.max(...addedBars.value.map(b => b.count), 1))
 
 const sortedRatings = computed(() => {
   if (!stats.value) return []
@@ -265,6 +286,41 @@ function ratingRank(rating) {
                     />
                   </div>
                   <span class="bar-num">{{ m.operations }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Monthly added works (spans both columns, Q4) -->
+            <div class="chart-card chart-wide">
+              <div class="chart-h">
+                <span class="chart-dot" style="background: var(--primary);" />
+                每月新增
+                <span v-if="addedYears.length > 1" class="year-pills" role="radiogroup" aria-label="选择年份">
+                  <button
+                    v-for="y in addedYears"
+                    :key="y"
+                    type="button"
+                    role="radio"
+                    :aria-checked="addedYear === y"
+                    class="year-pill"
+                    :class="{ on: addedYear === y }"
+                    @click="addedYear = y"
+                  >
+                    {{ y }}
+                  </button>
+                </span>
+              </div>
+              <div class="added-grid" role="img" :aria-label="`${addedYear} 年每月新增作品数`">
+                <div v-for="b in addedBars" :key="b.month" class="added-col">
+                  <span class="added-num" :class="{ show: b.count }">{{ b.count || '' }}</span>
+                  <div class="added-bar-wrap">
+                    <div
+                      class="added-bar"
+                      :class="{ zero: !b.count }"
+                      :style="{ height: b.count ? Math.max(b.count / maxAdded * 100, 8) + '%' : '' }"
+                    />
+                  </div>
+                  <span class="added-m">{{ b.month }}</span>
                 </div>
               </div>
             </div>
@@ -522,6 +578,75 @@ function ratingRank(rating) {
 .chart-wide { grid-column: 1 / -1; }
 .bar-label-month { min-width: 52px; font-variant-numeric: tabular-nums; color: var(--text-secondary); }
 .month-fill { background: linear-gradient(90deg, var(--primary), var(--primary-soft)); }
+
+/* 每月新增柱图（Q4） */
+.year-pills { margin-left: auto; display: flex; gap: 4px; }
+.year-pill {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+.year-pill:hover { color: var(--text-secondary); }
+.year-pill.on {
+  background: var(--bg-surface-hover);
+  color: var(--primary);
+}
+.added-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 6px;
+  align-items: end;
+}
+.added-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.added-num {
+  height: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  visibility: hidden;
+}
+.added-num.show { visibility: visible; }
+.added-bar-wrap {
+  height: 110px;
+  width: 100%;
+  max-width: 34px;
+  display: flex;
+  align-items: flex-end;
+  border-radius: 4px 4px 2px 2px;
+}
+.added-bar {
+  width: 100%;
+  border-radius: 4px 4px 2px 2px;
+  background: linear-gradient(180deg, var(--primary), var(--primary-soft));
+  transition: height 0.3s ease;
+}
+.added-bar.zero {
+  height: 2px;
+  background: var(--color-border);
+}
+.added-m {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+@media (pointer: coarse) {
+  .year-pill { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .added-bar { transition: none; }
+}
 
 .chart-h {
   display: flex;

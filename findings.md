@@ -49,3 +49,5 @@
 7. **GET /works 列表序列化缺 bangumi_id**（既有，同第 2 条家族）：Q2「加入想看」后的回填靠 create 响应完成，不受影响；如未来需要列表态标记已入册需补字段
 8. **S4 验收方式变更**：ZCode 内嵌渲染器（IAB）不可用（会话恢复后 node REPL 缺失），改用 Chrome headless + CDP（Runtime.evaluate/Page.captureScreenshot/Fetch 拦截）完成全部交互验证；结论与真实浏览器等价
 9. **设计资料丢失**：zace-implementation-handoff.md 与 Zace 原型文件随 Open Design 应用数据清理丢失（2026-10-23 确认，全盘搜索无果）；S4-S6 验收依据以对话记录 + docs/ui-evolution-prompts.md + 代码现状为准
+10. **时间线类型补齐（§3.4）审计结论**：后端 record_timeline 全部调用点只产出 5 种 action_type（created / status_change / rating_change / review_change / progress_update），前端 TimelineList 已全部覆盖（未知类型有兜底色与兜底标签）——落「前端只列现有 5 类」分支，无需改码
+11. **uvicorn 进程树清理**：run.py 为 reload=True（父+子进程）；重启时 taskkill 单 PID 会留下继承 socket 的子进程，新旧实例同时监听 8001 且旧代码抢答。重启后端应 `taskkill //PID <pid> //T //F` 清树，或直接用 `python -m uvicorn app.main:app --port 8001`（无 reload）单进程运行

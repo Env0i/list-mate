@@ -96,6 +96,15 @@ def get_stats(db: Session = Depends(get_db)):
         ym = (now - timedelta(days=30 * i)).strftime("%Y-%m")
         monthly_activity.append({"month": ym, "operations": ops_by_month.get(ym, 0)})
 
+    # 每月新增（Q4 决策）：按 created_at 月聚合的作品数；
+    # 返回全量稀疏字典 {"YYYY-MM": count}，前端按年取 12 个月柱图
+    added_rows = (
+        db.query(func.strftime("%Y-%m", Work.created_at), func.count(Work.id))
+        .group_by(func.strftime("%Y-%m", Work.created_at))
+        .all()
+    )
+    monthly_added = {m: n for m, n in added_rows}
+
     return {
         "total_works": total_works,
         "category_counts": category_counts,
@@ -106,4 +115,5 @@ def get_stats(db: Session = Depends(get_db)):
             "works_updated": week_works or 0,
         },
         "monthly_activity": monthly_activity,
+        "monthly_added": monthly_added,
     }
