@@ -1,6 +1,7 @@
 <script setup>
 import TopBar from './components/layout/TopBar.vue'
 import MobileNav from './components/layout/MobileNav.vue'
+import AppFooter from './components/layout/AppFooter.vue'
 import { useToast, dismissToast } from './utils/toast'
 const { toasts } = useToast()
 </script>
@@ -13,6 +14,7 @@ const { toasts } = useToast()
         <component :is="Component" />
       </transition>
     </router-view>
+    <AppFooter />
   </main>
   <MobileNav />
 

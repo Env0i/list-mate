@@ -5,8 +5,7 @@ const route = useRoute()
 
 const items = [
   { name: '收藏', path: '/', icon: 'home' },
-  { name: '搜索', path: '/search', icon: 'search' },
-  { name: '添加', path: '/add', icon: 'plus' },
+  { name: '添加作品', path: '/add', icon: 'plus' },
   { name: '统计', path: '/stats', icon: 'stats' },
   { name: '标签', path: '/tags', icon: 'tag' },
 ]
@@ -44,7 +43,14 @@ const items = [
           <span class="ni-t">{{ item.name }}</span>
         </router-link>
       </nav>
-      <ThemeToggle />
+      <div class="side">
+        <router-link to="/settings" class="gear" :class="{ on: route.path === '/settings' }" aria-label="设置" title="设置">
+          <svg viewBox="0 0 20 20" fill="currentColor" class="gear-i" aria-hidden="true">
+            <path fill-rule="evenodd" d="M9.67 2.5c-.9 0-1.68.55-2.02 1.34a2.3 2.3 0 0 1-2.6 1.34c-.85-.17-1.76.14-2.24.9-.44.7-.4 1.6.08 2.26a2.3 2.3 0 0 1 0 2.72c-.48.66-.52 1.56-.08 2.26.48.76 1.39 1.07 2.24.9a2.3 2.3 0 0 1 2.6 1.34c.34.79 1.13 1.34 2.02 1.34h.66c.9 0 1.68-.55 2.02-1.34a2.3 2.3 0 0 1 2.6-1.34c.85.17 1.76-.14 2.24-.9.44-.7.4-1.6-.08-2.26a2.3 2.3 0 0 1 0-2.72c.48-.66.52-1.56.08-2.26-.48-.76-1.39-1.07-2.24-.9a2.3 2.3 0 0 1-2.6-1.34A2.28 2.28 0 0 0 10.33 2.5h-.66zM10 12.75a2.75 2.75 0 1 0 0-5.5 2.75 2.75 0 0 0 0 5.5z" clip-rule="evenodd"/>
+          </svg>
+        </router-link>
+        <ThemeToggle />
+      </div>
     </div>
   </header>
 </template>
@@ -113,8 +119,24 @@ const items = [
 .ni.on { color: var(--primary); background: var(--primary-light); font-weight: 600; }
 .ni-i { width: 17px; height: 17px; }
 
+.side { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.gear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  color: var(--text-tertiary);
+  transition: all 0.15s;
+}
+.gear:hover { color: var(--text-secondary); background: var(--bg-surface-hover); }
+.gear.on { color: var(--primary); background: var(--primary-light); }
+.gear-i { width: 18px; height: 18px; }
+
 /* 触屏下导航项与图标按钮达到 44px 触控目标 */
 @media (pointer: coarse) {
   .ni { min-height: 44px; }
+  .gear { width: 44px; height: 44px; }
 }
 </style>

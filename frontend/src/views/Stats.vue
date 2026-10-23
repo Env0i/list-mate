@@ -1,8 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { statsApi, timelineApi } from '../api/client'
-import { exportApi } from '../api/client'
-import { showToast } from '../utils/toast'
 import { STATUS_LABELS_FLAT, STATUS_COLORS } from '../constants/work'
 import TimelineList from '../components/common/TimelineList.vue'
 
@@ -11,31 +9,6 @@ const timeline = ref([])
 const loading = ref(true)
 const timelineLoading = ref(true)
 const activeTab = ref('overview')
-const restoreInput = ref(null)
-const restoring = ref(false)
-
-function pickRestore() { restoreInput.value?.click() }
-
-async function onRestoreFile(e) {
-  const file = e.target.files?.[0]
-  e.target.value = ''
-  if (!file) return
-  const ok = confirm(`将用「${file.name}」覆盖当前全部数据。
-覆盖前当前数据会先自动备份到服务器 backups/ 目录。
-确定还原？`)
-  if (!ok) return
-  restoring.value = true
-  try {
-    const fd = new FormData()
-    fd.append('file', file)
-    const { data } = await exportApi.restore(fd)
-    showToast(data.message || '还原成功，请重启服务后刷新', 'success')
-  } catch (err) {
-    showToast(err.response?.data?.detail || '还原失败', 'error')
-  } finally {
-    restoring.value = false
-  }
-}
 
 onMounted(async () => {
   try {
@@ -128,46 +101,12 @@ function ratingRank(rating) {
           <p class="subtitle">你的 ACGN 收藏数据总览</p>
         </div>
         <div class="hd-actions">
-          <a :href="exportApi.jsonUrl()" class="export-btn" download title="导出 JSON">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-              <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z"/>
-              <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/>
+          <router-link to="/settings" class="settings-hint">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="13" height="13" aria-hidden="true">
+              <path fill-rule="evenodd" d="M9.67 2.5c-.9 0-1.68.55-2.02 1.34a2.3 2.3 0 0 1-2.6 1.34c-.85-.17-1.76.14-2.24.9-.44.7-.4 1.6.08 2.26a2.3 2.3 0 0 1 0 2.72c-.48.66-.52 1.56-.08 2.26.48.76 1.39 1.07 2.24.9a2.3 2.3 0 0 1 2.6 1.34c.34.79 1.13 1.34 2.02 1.34h.66c.9 0 1.68-.55 2.02-1.34a2.3 2.3 0 0 1 2.6-1.34c.85.17 1.76-.14 2.24-.9.44-.7.4-1.6-.08-2.26a2.3 2.3 0 0 1 0-2.72c.48-.66.52-1.56.08-2.26-.48-.76-1.39-1.07-2.24-.9a2.3 2.3 0 0 1-2.6-1.34A2.28 2.28 0 0 0 10.33 2.5h-.66zM10 12.75a2.75 2.75 0 1 0 0-5.5 2.75 2.75 0 0 0 0 5.5z" clip-rule="evenodd"/>
             </svg>
-            <span class="export-label">JSON</span>
-          </a>
-          <a :href="exportApi.csvUrl()" class="export-btn" download title="导出 CSV">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-              <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z"/>
-              <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/>
-            </svg>
-            <span class="export-label">CSV</span>
-          </a>
-          <a :href="exportApi.backupUrl()" class="export-btn" download title="下载数据库完整备份（含时间线/附件/封面，可直接还原）">
-            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-              <path d="M10 2a4 4 0 00-4 4v4.5a.75.75 0 001.5 0V6a2.5 2.5 0 015 0v4.5a.75.75 0 001.5 0V6a4 4 0 00-4-4z"/>
-              <path d="M5.5 9.25a.75.75 0 011.5 0v2.25a3 3 0 006 0V9.25a.75.75 0 011.5 0v2.25a4.5 4.5 0 01-9 0V9.25z"/>
-              <path d="M10 13.25a.75.75 0 01.75.75v2.19l.97-.97a.75.75 0 111.06 1.06l-2.25 2.25a.75.75 0 01-1.06 0l-2.25-2.25a.75.75 0 111.06-1.06l.97.97V14a.75.75 0 01.75-.75z"/>
-            </svg>
-            <span class="export-label">备份</span>
-          </a>
-          <input
-            ref="restoreInput"
-            type="file"
-            accept=".db,application/octet-stream"
-            class="restore-input"
-            @change="onRestoreFile"
-          />
-          <button
-            class="export-btn"
-            :disabled="restoring"
-            title="从 .db 备份还原（覆盖当前数据，当前数据会先自动备份）"
-            @click="pickRestore"
-          >
-            <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14">
-              <path fill-rule="evenodd" d="M3.5 4.75A2.25 2.25 0 015.75 2.5h5.5a.75.75 0 01.53.22l4 4a.75.75 0 01.22.53v8.5a2.25 2.25 0 01-2.25 2.25h-8.5A2.25 2.25 0 013.5 15.75v-11zm6.75 3.75a.75.75 0 00-1.5 0v3.69l-.97-.97a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l2.25-2.25a.75.75 0 00-1.06-1.06l-.97.97V8.5z" clip-rule="evenodd"/>
-            </svg>
-            <span class="export-label">{{ restoring ? '还原中...' : '还原' }}</span>
-          </button>
+            数据备份与还原已移至设置
+          </router-link>
         </div>
       </div>
 
@@ -388,25 +327,19 @@ function ratingRank(rating) {
 .subtitle { font-size: var(--fs-sm); color: var(--text-tertiary); margin-top: 2px; }
 
 .hd-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.export-btn {
+.settings-hint {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 32px;
-  padding: 0 13px;
-  border-radius: var(--radius-sm);
+  height: 30px;
   font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-tertiary);
-  background: var(--bg-surface);
-  border: 1px solid var(--color-border);
-  transition: all 0.15s;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
 }
-.export-btn:hover {
-  color: var(--text-primary);
-  border-color: var(--text-tertiary);
-  box-shadow: var(--shadow-sm);
-}
+.settings-hint:hover { color: var(--text-primary); }
 
 /* Loading */
 .loading {
